@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/SSOEngine/01_Core/releases">
+  <a href="https://github.com/SSOEngine/releases">
     <img src="1.5.png" alt="SSOEngine v1.5 COMING SOON" width="90%">
   </a>
 </p>
