@@ -1,4 +1,8 @@
-# [<img src="https://raw.githubusercontent.com/SSOEngine/1.5.png" alt="SSOEngine v1.5 COMING SOON" width="100%">](https://github.com/SSOEngine/01_Core/releases)
+<p align="center">
+  <a href="https://github.com/SSOEngine/01_Core/releases">
+    <img src="1.5.png" alt="SSOEngine v1.5 COMING SOON" width="100%">
+  </a>
+</p>
 
 # SSOEngine
 
