@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSOEngine 1.5 - Cross-Platform Game Framework</title>
+    <meta name="description" content="SSOEngine 1.5 - Cross-Platform 2/3D Game Framework with Android support. Easy C++ game development for Windows desktop and Android mobile with advanced 3D physics and shader support.">
+    <meta name="keywords" content="game engine, C++, Raylib, Android, cross-platform, 2D game development, 3D game development, indie game, game framework, physics engine, shaders">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="SSOEngine 1.5 - Cross-Platform Game Framework">
+    <meta property="og:description" content="Cross-Platform 2/3D Game Framework with Android support. Perfect for indie game developers with advanced 3D physics and shader support.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://ssoengine.pages.dev/assets/logo.png">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon-32x32.svg" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon-16x16.svg" sizes="16x16">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg" sizes="any">
+</head>
+<body>
+    <!-- Cookie Consent Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <h4>🍪 Cookie Consent</h4>
+                <p>We use cookies to enhance your experience, analyze site traffic, and personalize content. By continuing to use our site, you agree to our use of cookies.</p>
+            </div>
+            <div class="cookie-actions">
+                <button class="btn btn-secondary" id="acceptNecessary">Necessary Only</button>
+                <button class="btn btn-primary" id="acceptAll">Accept All</button>
+                <a href="privacy.html#cookies-and-tracking" class="btn btn-outline">Learn More</a>
+            </div>
+        </div>
+    </div>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="assets/logo.svg" alt="SSOEngine" class="logo">
+                <span class="logo-text">SSO</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="docs.html" class="nav-link">Docs</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#download" class="nav-link">Download</a></li>
+                <li><a href="#about" class="nav-link">About</a></li>
+            </ul>
+            <a href="#download" class="nav-cta">v1.5 Download</a>
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">SSOENGINE 1.5: CROSS-PLATFORM GAME ENGINE</h1>
+                <p class="hero-subtitle">Windows Desktop + Android Mobile. One Codebase.</p>
+                <p class="hero-description">
+                    SSOEngine delivers cross-platform C++ game development with Raylib at its core. 
+                    Build once, deploy everywhere. Complete 2D/3D capabilities with Android APK generation.
+                </p>
+                <div class="hero-actions">
+                    <a href="#download" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Download v1.5
+                    </a>
+                    <a href="docs.html" class="btn btn-outline">
+                        <i class="fas fa-book"></i> Documentation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Features</h2>
+                <p class="section-subtitle">Ultra-lightweight engine with maximum performance</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <h3>Cross-Platform Support</h3>
+                    <p class="feature-description">Build for Windows desktop and Android mobile from the same C++ codebase with automatic APK generation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-gamepad"></i></div>
+                    <h3>Complete 2D & 3D Pipeline</h3>
+                    <p class="feature-description">Full rendering pipeline for sprites, models, and advanced shader effects.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-tools"></i></div>
+                    <h3>19+ Integrated Tools</h3>
+                    <p class="feature-description">Comprehensive toolkit with physics, audio, input, asset management, and Android support.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section id="tools" class="tools">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Tools</h2>
+                <p class="section-subtitle">Header-only components for rapid development</p>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <div>
+                        <h4>SSO::Android</h4>
+                        <p>Cross-platform build system with automatic APK generation</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-window-maximize"></i></div>
+                    <div>
+                        <h4>SSO::Window</h4>
+                        <p>Multi-display window management with fullscreen support</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-paint-brush"></i></div>
+                    <div>
+                        <h4>SSO::Renderer</h4>
+                        <p>2D/3D rendering pipeline with advanced shaders</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-atom"></i></div>
+                    <div>
+                        <h4>SSO::Physics3D</h4>
+                        <p>Real-time 3D physics with realistic collision detection</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-volume-up"></i></div>
+                    <div>
+                        <h4>SSO::Audio</h4>
+                        <p>Audio system with music management and memory safety</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-keyboard"></i></div>
+                    <div>
+                        <h4>SSO::Input</h4>
+                        <p>Multi-device input handling for keyboard, mouse, gamepad</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-box"></i></div>
+                    <div>
+                        <h4>SSO::Provider</h4>
+                        <p>Cross-platform asset bundle system for Android & Windows</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <h4>SSO::Timer</h4>
+                        <p>High-precision timing and delta time calculations</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-camera"></i></div>
+                    <div>
+                        <h4>SSO::Camera</h4>
+                        <p>2D/3D camera system with smooth transitions</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-font"></i></div>
+                    <div>
+                        <h4>SSO::Text</h4>
+                        <p>Advanced text rendering with typewriter effects and gradients</p>
+                    </div>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon"><i class="fas fa-tv"></i></div>
+                    <div>
+                        <h4>SSO::Splash</h4>
+                        <p>Professional splash screen system with fade effects</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="docs" class="docs">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Documentation</h2>
+                <p class="section-subtitle">Learn SSOEngine step by step</p>
+            </div>
+            <div class="docs-content">
+                <div class="docs-grid">
+                    <div class="doc-card">
+                        <div class="doc-icon">🚀</div>
+                        <h3>Quick Start</h3>
+                        <p>Get up and running in minutes with our quick start guide.</p>
+                        <a href="docs.html#getting-started" class="doc-link">Get Started →</a>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">📚</div>
+                        <h3>API Reference</h3>
+                        <p>Complete documentation of all SSOEngine tools and functions.</p>
+                        <a href="docs.html#tools-overview" class="doc-link">View Docs →</a>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">🎮</div>
+                        <h3>Tutorials</h3>
+                        <p>Step-by-step tutorials for building your first games.</p>
+                        <a href="docs.html#examples" class="doc-link">Learn More →</a>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">💡</div>
+                        <h3>Examples</h3>
+                        <p>Complete game examples to learn from and modify.</p>
+                        <a href="docs.html#examples" class="doc-link">View Examples →</a>
+                    </div>
+                </div>
+                
+                <!-- Quick Start Preview -->
+                <div class="quick-start-preview">
+                    <h3>Quick Start</h3>
+                    <div class="step-list">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Install Prerequisites</h4>
+                                <p>Install MinGW-w64 for compilation on Windows:</p>
+                                <div class="download-links">
+                                    <a href="https://www.mingw-w64.org/downloads/" target="_blank" class="btn btn-success" style="margin: 5px;">
+                                        <span>⬇️</span> MinGW-w64
+                                    </a>
+                                    <a href="https://git-scm.com/download/win" target="_blank" class="btn btn-warning" style="margin: 5px;">
+                                        <span>⬇️</span> Git for Windows
+                                    </a>
+                                    <a href="https://code.visualstudio.com/" target="_blank" class="btn btn-outline" style="margin: 5px;">
+                                        <span>⬇️</span> VS Code (Recommended)
+                                    </a>
+                                </div>
+                                <p style="margin-top: 10px; font-size: 0.875rem; color: var(--text-muted);">
+                                    💡 <strong>Tip:</strong> Add MinGW-w64 to your PATH during installation
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Clone Repository</h4>
+                                <pre><code>git clone https://github.com/Rozaq125/SSOEngine
+cd SSOEngine/01_Core</code></pre>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Build Your Game</h4>
+                                <pre><code>build.bat</code></pre>
+                                <p>This automatically downloads Raylib and builds your game.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Start Coding</h4>
+                                <p>Edit main.cpp and start building your game!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Showcase Section -->
+    <section id="showcase" class="showcase">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Showcase</h2>
+                <p class="section-subtitle">Games made with SSOEngine</p>
+            </div>
+            <div class="showcase-content">
+                <div class="showcase-placeholder">
+                    <div class="placeholder-icon">🎮</div>
+                    <h3>Want to be featured?</h3>
+                    <p>Have you made a game with SSOEngine? Let us know and we'll feature it here!</p>
+                    <a href="mailto:spctacularstudio@gmail.com" class="btn btn-danger">Submit Your Game</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Download SSOEngine</h2>
+                <p class="section-subtitle">Get started with game development today</p>
+            </div>
+            <div class="download-content">
+                <div class="download-card">
+                    <div class="download-header">
+                        <h3>Latest Version</h3>
+                        <span class="version-badge">v1.5 Android Support!</span>
+                    </div>
+                    <div class="download-features">
+                        <ul>
+                            <li>Complete toolkit with 19+ tools</li>
+                            <li>Cross-platform support (Windows + Android)</li>
+                            <li>Advanced 2D & 3D rendering support</li>
+                            <li>Professional shader system (5 effects)</li>
+                            <li>Realistic 3D physics engine</li>
+                            <li>Cross-platform asset bundle system</li>
+                            <li>Audio system with music management</li>
+                            <li>Automatic APK generation</li>
+                            <li>MIT License (Free for commercial use)</li>
+                        </ul>
+                    </div>
+                    <div class="download-actions">
+                        <a href="downloading.html" class="btn btn-3d">
+                            <span>Download v1.5</span>
+                        </a>
+                        <a href="all.html" class="btn btn-glass">
+                            <span>View All Versions</span>
+                        </a>
+                        <a href="https://github.com/Rozaq125/SSOEngine" class="btn btn-outline">
+                            <span>View on GitHub</span>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="requirements">
+                    <h3>System Requirements</h3>
+                    <ul>
+                        <li><strong>OS:</strong> Windows 10 or later</li>
+                        <li><strong>Compiler:</strong> MinGW-w64</li>
+                        <li><strong>Language:</strong> C++17 or later</li>
+                        <li><strong>Memory:</strong> 4GB RAM minimum</li>
+                        <li><strong>Storage:</strong> 500MB available space</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <img src="assets/logo.svg" alt="SSOEngine" class="logo">
+                        <span class="logo-text">SSOEngine</span>
+                    </div>
+                    <p class="footer-description">
+                        Simple 2/3D Game Framework Built with Raylib. 
+                        Made with passion for indie game developers everywhere.
+                    </p>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#tools">Tools</a></li>
+                            <li><a href="#download">Download</a></li>
+                            <li><a href="docs.html">Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Community</h4>
+                        <ul>
+                            <li><a href="https://github.com/Rozaq125/SSOEngine">GitHub</a></li>
+                            <li><a href="mailto:spctacularstudio@gmail.com">Contact</a></li>
+                            <li><a href="#showcase">Showcase</a></li>
+                            <li><a href="https://saweria.co/omedonation">Support</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="privacy.html">Privacy Policy</a></li>
+                            <li><a href="terms.html">Terms of Service</a></li>
+                            <li><a href="license.html">License</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="footer-support">
+                    <h4>Support the Project</h4>
+                    <p>SSOEngine is donationware. If you find it useful, please consider supporting the development.</p>
+                    <a href="https://saweria.co/omedonation" class="btn btn-warning">
+                        <span>💝</span> Donate on Saweria
+                    </a>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2026 <a href="#">SSOGames Studio</a>. Lead Developer: <a href="https://github.com/Rozaq125">Rozak</a></p>
+                    <p>Built with <span class="heart">❤️</span> using HTML, CSS & JavaScript</p>
+                </div>
+                <div class="footer-credits">
+                    <p>Special thanks to: Nathan, Raylib, C++, GitHub</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>

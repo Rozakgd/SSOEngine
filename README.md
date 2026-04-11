@@ -75,7 +75,7 @@ ANDROID BUILD:
 ### Installation
 ```bash
 # Clone and build
-git clone -b v1.5-android https://github.com/Rozaq125/SSOEngine.git
+git clone https://github.com/Rozaq125/SSOEngine.git
 cd SSOEngine/01_Core
 build.bat
 

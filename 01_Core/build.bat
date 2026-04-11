@@ -244,8 +244,32 @@ if not exist "!SDK_ROOT!\platforms\android-33\android.jar" (
         )
     )
     echo [ERROR] No android.jar found in platforms folder
-    pause
-    exit /b 1
+    echo.
+    echo [FALLBACK] Please enter android.jar path manually:
+    set /p MANUAL_JAR_PATH="Enter full path to android.jar: "
+    if "!MANUAL_JAR_PATH!"=="" (
+        echo [ERROR] No path provided
+        pause
+        exit /b 1
+    )
+    
+    :: Validate manual path
+    if not exist "!MANUAL_JAR_PATH!" (
+        echo [ERROR] File not found: !MANUAL_JAR_PATH!
+        pause
+        exit /b 1
+    )
+    
+    :: Check if it's actually android.jar
+    echo !MANUAL_JAR_PATH! | findstr /i "android.jar" >nul
+    if !errorlevel! neq 0 (
+        echo [ERROR] File must be android.jar
+        pause
+        exit /b 1
+    )
+    
+    set "ANDROID_JAR_PATH=!MANUAL_JAR_PATH!"
+    echo [SUCCESS] Using manual android.jar: !ANDROID_JAR_PATH!
 ) else (
     set "ANDROID_JAR_PATH=!SDK_ROOT!\platforms\android-33\android.jar"
 )
@@ -276,7 +300,7 @@ if !errorlevel! neq 0 (
 )
 
 :: Create R.java file
-call "!BUILD_TOOLS_PATH!\aapt.exe" package -f -m -J android\src -M android\AndroidManifest.xml -S android\res -I "!ANDROID_JAR_PATH!" -F android\bin\SSOEngine.unsigned.apk
+call "!BUILD_TOOLS_PATH!\aapt.exe" package -f -m -J "android\src" -M "android\AndroidManifest.xml" -S "android\res" -I "!ANDROID_JAR_PATH!" -F "android\bin\SSOEngine.unsigned.apk"
 if !errorlevel! neq 0 (
     echo [ERROR] Failed to create R.java
     pause
@@ -284,23 +308,31 @@ if !errorlevel! neq 0 (
 )
 
 :: Compile Java files
-javac -d android\bin -classpath "!ANDROID_JAR_PATH!" android\src\com\ssogames\ssoengine\*.java
+javac -d "android\bin" -classpath "!ANDROID_JAR_PATH!" "android\src\com\ssogames\ssoengine\*.java"
 if !errorlevel! neq 0 (
     echo [ERROR] Failed to compile Java files
     pause
     exit /b 1
 )
 
-:: PROPER STAGING: Create standard Android library path in root
-mkdir "lib/arm64-v8a"
-copy /Y "build\libSSOEngine.so" "lib/arm64-v8a/"
+:: PROPER STAGING: Create temporary staging folder for native library
+echo [INFO] Creating staging folder for native library...
+if exist "temp_lib_staging" rd /s /q "temp_lib_staging"
+mkdir "temp_lib_staging\lib\arm64-v8a"
+copy /Y "%BUILD_DIR%\libSSOEngine.so" "temp_lib_staging\lib\arm64-v8a\"
+
+if !errorlevel! neq 0 (
+    echo [ERROR] Failed to copy .so to staging folder
+    pause
+    exit /b 1
+)
 
 :: Create DEX file
 echo [INFO] Creating DEX file...
 if not exist "android\bin" mkdir "android\bin"
 
 set "D8_EXE=!BUILD_TOOLS_PATH!\d8.bat"
-call "!D8_EXE!" --output android\bin\ android\bin\com\ssogames\ssoengine\*.class --lib "!ANDROID_JAR_PATH!"
+call "!D8_EXE!" --output "android\bin\" "android\bin\com\ssogames\ssoengine\*.class" --lib "!ANDROID_JAR_PATH!"
 
 if !errorlevel! neq 0 (
     echo [ERROR] Failed to create DEX file
@@ -313,8 +345,8 @@ echo [INFO] Injecting DEX into APK root...
 
 set "AAPT_EXE=!BUILD_TOOLS_PATH!\aapt.exe"
 
-pushd android\bin
-"!AAPT_EXE!" add SSOEngine.unsigned.apk classes.dex
+pushd "android\bin"
+"!AAPT_EXE!" add "SSOEngine.unsigned.apk" "classes.dex"
 popd
 
 if !errorlevel! neq 0 (
@@ -323,8 +355,20 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 
-:: APK PACKAGING: Add library using exact command
-call "!BUILD_TOOLS_PATH!\aapt.exe" add "android\bin\SSOEngine.unsigned.apk" "lib/arm64-v8a/libSSOEngine.so"
+:: APK PACKAGING: Add library using pushd/popd from staging folder
+echo [INFO] Adding native library to APK...
+pushd "temp_lib_staging"
+"!BUILD_TOOLS_PATH!\aapt.exe" add "..\android\bin\SSOEngine.unsigned.apk" "lib/arm64-v8a/libSSOEngine.so"
+popd
+
+if !errorlevel! neq 0 (
+    echo [ERROR] Failed to add native library to APK
+    pause
+    exit /b 1
+)
+
+:: Cleanup staging folder
+rd /s /q "temp_lib_staging"
 
 :: Align APK
 call "!BUILD_TOOLS_PATH!\zipalign.exe" -f 4 android\bin\SSOEngine.unsigned.apk android\bin\SSOEngine.aligned.apk
