@@ -1,9 +1,3 @@
-<p align="center">
-  <a href="https://github.com/Rozaq125/SSOEngine/releases">
-    <img src="1.5.png" alt="SSOEngine v1.5 COMING SOON" width="90%">
-  </a>
-</p>
-
 # SSOEngine
 
 **Simple 2D/3D Game Engine Built with Raylib**
