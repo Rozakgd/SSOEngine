@@ -100,23 +100,28 @@ inline void InitPhysicsGame() {
                 1.0f
             );
             
-            cube->color = colors[(cubeIndex + layer) % 8];
-            cube->restitution = 0.2f; // Very low bounciness for realistic stacking
-            cube->friction = 0.9f;    // Higher friction for stability
-            cubeIndex++;
+            if (cube) {
+                cube->restitution = 0.2f;
+                cube->friction = 0.9f;
+                cube->color = colors[layer % 8];
+            }
         }
     }
     
     // Create ground
-    SSO::Physics3D::CreateStaticBody((Vector3){0, -0.5f, 0}, (Vector3){20, 1, 20});
+    SSO::Physics3D::RigidBody* ground = SSO::Physics3D::CreateStaticBody(
+        (Vector3){0.0f, -0.5f, 0.0f}, 
+        (Vector3){20.0f, 1.0f, 20.0f}
+    );
+    if (ground) {
+        ground->color = GRAY;
+    }
     
     // Initialize bullets
-    physicsGame.bulletCount = 0;
     for (int i = 0; i < 50; i++) {
         physicsGame.bullets[i].isActive = false;
     }
-    
-    // Stats
+    physicsGame.bulletCount = 0;
     physicsGame.shotsFired = 0;
     physicsGame.cubesHit = 0;
 }
@@ -373,6 +378,7 @@ inline void Shutdown() {
         }
     }
     
+    // Cleanup physics
     SSO::Physics3D::Cleanup();
 }
 

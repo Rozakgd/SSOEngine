@@ -209,7 +209,7 @@ Your support helps us:
 
 ### Community
 - **GitHub**: [Rozaq125/SSOEngine](https://github.com/Rozak125/SSOEngine)
-- **Website**: [SSOEngine Webs](https://ssoengine.pages.dev)
+- **Website**: [SSOEngine Web](https://ssoengine.pages.dev)
 
 ---
 

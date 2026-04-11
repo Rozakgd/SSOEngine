@@ -2,6 +2,7 @@
 #define SSO_UI_H
 
 #include "raylib.h"
+#include "sso_window.h"
 #include <vector>
 #include <string>
 #include <math.h> 
@@ -20,17 +21,21 @@ namespace SSO {
         inline UIStyle PanelStyle = { { 30, 30, 35, 250 }, { 30, 30, 35, 250 }, WHITE, { 70, 70, 80, 255 } };
 
         inline void DrawBackground(Texture2D tex, Color tint = WHITE) {
-            if (tex.id <= 0) {
+            if (tex.id <= 0 || tex.width <= 0 || tex.height <= 0) {
+                ClearBackground({ 15, 15, 20, 255 });
+                return;
+            }
+            if (!IsTextureValid(tex)) {
                 ClearBackground({ 15, 15, 20, 255 });
                 return;
             }
             DrawTexturePro(tex, { 0, 0, (float)tex.width, (float)tex.height }, 
-                           { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() }, 
+                           { 0, 0, (float)SSO::Window::virtualWidth, (float)SSO::Window::virtualHeight }, 
                            { 0, 0 }, 0.0f, tint);
         }
 
         inline void DrawOverlay(float alpha = 0.5f) {
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, alpha));
+            DrawRectangle(0, 0, SSO::Window::virtualWidth, SSO::Window::virtualHeight, Fade(BLACK, alpha));
         }
 
         inline void DrawTextShadow(Font font, const char* text, Vector2 pos, float size, float spacing, Color color) {
@@ -39,13 +44,21 @@ namespace SSO {
         }
 
         inline bool DrawButton(Rectangle rect, const char* text, Font font, UIStyle style = DefaultButtonStyle) {
-            Vector2 mouse = GetMousePosition();
+            Vector2 mouse = SSO::Window::GetVirtualMouse();
             bool hovering = CheckCollisionPointRec(mouse, rect);
+            bool pressed = hovering && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+            bool clicked = hovering && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
             
-            Color bg = hovering ? style.hoverColor : style.baseColor;
+            Color bg;
+            if (pressed) {
+                bg = { (unsigned char)(style.baseColor.r - 10), (unsigned char)(style.baseColor.g - 10), (unsigned char)(style.baseColor.b - 10), style.baseColor.a };
+            } else if (hovering) {
+                bg = style.hoverColor;
+            } else {
+                bg = style.baseColor;
+            }
             Color border = hovering ? SKYBLUE : style.borderColor;
 
-            // MANUAL RECTANGLE (NO ROUNDED)
             DrawRectangleRec(rect, bg);
             DrawRectangleLinesEx(rect, 1, border);
 
@@ -54,19 +67,15 @@ namespace SSO {
             Vector2 textPos = { rect.x + (rect.width / 2) - (textSize.x / 2), rect.y + (rect.height / 2) - (textSize.y / 2) };
             
             DrawTextEx(font, text, textPos, fontSize, 1, style.textColor);
-            return (hovering && IsMouseButtonPressed(MOUSE_LEFT_BUTTON));
+            return clicked;
         }
 
         inline void DrawPanel(Rectangle rect, const char* title, Font font, UIStyle style = PanelStyle) {
-            // BASE PANEL
             DrawRectangleRec(rect, style.baseColor);
             DrawRectangleLinesEx(rect, 1, style.borderColor);
-            
-            // HEADER PANEL (MANUAL SQUARE)
             Rectangle header = { rect.x, rect.y, rect.width, 30 };
             DrawRectangleRec(header, { 100, 30, 45, 255 }); 
             DrawRectangleLinesEx(header, 1, style.borderColor);
-            
             DrawTextEx(font, title, { rect.x + 10, rect.y + 7 }, 16, 1, WHITE);
         }
 
@@ -80,6 +89,7 @@ namespace SSO {
             } else {
                 *scrollPos = 0;
             }
+
             BeginScissorMode((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
         }
 
@@ -88,7 +98,7 @@ namespace SSO {
         }
 
         inline void HandleDrag(Rectangle* rect, bool* dragging) {
-            Vector2 mouse = GetMousePosition();
+            Vector2 mouse = SSO::Window::GetVirtualMouse();
             Rectangle header = { rect->x, rect->y, rect->width, 30 };
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, header)) *dragging = true;
             if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) *dragging = false;

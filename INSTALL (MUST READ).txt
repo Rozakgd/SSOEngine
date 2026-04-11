@@ -1,5 +1,5 @@
 ===================================================
-      SSOEngine v1.0 Alpha - INSTALLATION GUIDE
+      SSOEngine v1.5 - INSTALLATION GUIDE
 ===================================================
 
 Thank you for downloading SSOEngine!

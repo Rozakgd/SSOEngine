@@ -3,6 +3,16 @@
 
 #include "raylib.h"
 #include <iostream>
+
+#if defined(__ANDROID__) || defined(ANDROID)
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
+#include <android/log.h>
+#include <android/native_window.h>
+
+extern AAssetManager* androidAssetManager;
+#endif
+
 #include <fstream>
 #include <vector>
 #include <string>
@@ -23,12 +33,51 @@ namespace SSO {
             long long offset;
         };
 
-        /**
-         * Core Function: Extracts raw binary data from the .sso bundle.
-         * Returns a pointer to the data allocated in memory. 
-         * User is responsible for freeing the memory if not handled by Raylib loaders.
-         */
-        inline unsigned char* LoadRawDataFromBundle(const std::string& bundlePath, const std::string& targetFile, int* dataSize) {
+#if defined(__ANDROID__) || defined(ANDROID)
+        inline unsigned char* LoadRawDataFromAndroidAsset(const std::string& bundlePath, const std::string& targetFile, int* dataSize) {
+            if (!androidAssetManager) {
+                TraceLog(LOG_ERROR, "SSO_PROVIDER: Android AssetManager initialization failed.");
+                return nullptr;
+            }
+
+            AAsset* asset = AAssetManager_open(androidAssetManager, bundlePath.c_str(), AASSET_MODE_STREAMING);
+            if (!asset) {
+                TraceLog(LOG_ERROR, "SSO_PROVIDER: Unable to open Android asset %s", bundlePath.c_str());
+                return nullptr;
+            }
+
+            AssetHeader header;
+            AAsset_read(asset, &header, sizeof(AssetHeader));
+
+            if (std::memcmp(header.signature, "SSO ", 4) != 0) {
+                TraceLog(LOG_ERROR, "SSO_PROVIDER: Invalid Android bundle signature detected.");
+                AAsset_close(asset);
+                return nullptr;
+            }
+
+            for (int i = 0; i < header.fileCount; ++i) {
+                FileMetadata meta;
+                AAsset_read(asset, &meta, sizeof(FileMetadata));
+                
+                if (targetFile == std::string(meta.fileName)) {
+                    unsigned char* buffer = (unsigned char*)RL_MALLOC(meta.fileSize);
+                    AAsset_seek(asset, meta.offset, SEEK_SET);
+                    AAsset_read(asset, buffer, meta.fileSize);
+                    AAsset_close(asset);
+                    
+                    *dataSize = (int)meta.fileSize;
+                    TraceLog(LOG_INFO, "SSO_PROVIDER: Successfully extracted %s from Android bundle (%d bytes)", targetFile.c_str(), *dataSize);
+                    return buffer;
+                }
+            }
+
+            TraceLog(LOG_WARNING, "SSO_PROVIDER: File '%s' not found in Android bundle", targetFile.c_str());
+            AAsset_close(asset);
+            return nullptr;
+        }
+#endif
+
+        inline unsigned char* LoadRawDataFromPC(const std::string& bundlePath, const std::string& targetFile, int* dataSize) {
             std::ifstream file(bundlePath, std::ios::binary);
             if (!file) {
                 TraceLog(LOG_ERROR, "SSO_PROVIDER: Failed to open bundle at %s", bundlePath.c_str());
@@ -38,9 +87,8 @@ namespace SSO {
             AssetHeader header;
             file.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
-            // Validate SSO Signature
             if (std::memcmp(header.signature, "SSO ", 4) != 0) {
-                TraceLog(LOG_ERROR, "SSO_PROVIDER: Invalid bundle signature!");
+                TraceLog(LOG_ERROR, "SSO_PROVIDER: Invalid bundle signature detected.");
                 file.close();
                 return nullptr;
             }
@@ -49,14 +97,14 @@ namespace SSO {
                 FileMetadata meta;
                 file.read(reinterpret_cast<char*>(&meta), sizeof(FileMetadata));
                 
-                if (targetFile == meta.fileName) {
+                if (targetFile == std::string(meta.fileName)) {
                     unsigned char* buffer = (unsigned char*)RL_MALLOC(meta.fileSize);
                     file.seekg(meta.offset);
                     file.read(reinterpret_cast<char*>(buffer), meta.fileSize);
                     file.close();
                     
                     *dataSize = (int)meta.fileSize;
-                    TraceLog(LOG_INFO, "SSO_PROVIDER: Found and extracted %s (%d bytes)", targetFile.c_str(), *dataSize);
+                    TraceLog(LOG_INFO, "SSO_PROVIDER: Successfully extracted %s from bundle (%d bytes)", targetFile.c_str(), *dataSize);
                     return buffer;
                 }
             }
@@ -66,9 +114,15 @@ namespace SSO {
             return nullptr;
         }
 
-        // --- Resource Specific Loaders ---
+        inline unsigned char* LoadRawDataFromBundle(const std::string& bundlePath, const std::string& targetFile, int* dataSize) {
+#if !defined(__ANDROID__)
+            return LoadRawDataFromPC(bundlePath, targetFile, dataSize);
+#else
+            return LoadRawDataFromAndroidAsset(bundlePath, targetFile, dataSize);
+#endif
+        }
 
-        // Load 2D Textures (.png, .jpg, .tga)
+        
         inline Texture2D LoadTextureFromBundle(const std::string& bPath, const std::string& fName) {
             int size = 0;
             unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
@@ -77,122 +131,61 @@ namespace SSO {
             Image img = LoadImageFromMemory(GetFileExtension(fName.c_str()), data, size);
             Texture2D tex = LoadTextureFromImage(img);
             UnloadImage(img);
-            RL_FREE(data); 
+            if (data) RL_FREE(data);
             return tex;
         }
 
-        // Load Custom Fonts (.ttf, .otf)
         inline Font LoadFontFromBundle(const std::string& bPath, const std::string& fName, int fontSize) {
             int size = 0;
             unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
             if (!data) return GetFontDefault();
 
             Font font = LoadFontFromMemory(GetFileExtension(fName.c_str()), data, size, fontSize, NULL, 0);
-            RL_FREE(data);
+            if (data) RL_FREE(data);
             return font;
         }
 
-        // Load Audio Waves for Sound Effects (.wav, .ogg)
         inline Wave LoadWaveFromBundle(const std::string& bPath, const std::string& fName) {
             int size = 0;
             unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
             if (!data) return { 0 };
 
             Wave wave = LoadWaveFromMemory(GetFileExtension(fName.c_str()), data, size);
-            RL_FREE(data);
+            if (data) RL_FREE(data);
             return wave;
         }
 
-        // Load Music Streams (.mp3, .ogg)
-        // NOTE: Memory must remain allocated for the duration of the stream.
-        inline Music LoadMusicFromBundle(const std::string& bPath, const std::string& fName) {
+        inline std::pair<Music, unsigned char*> LoadMusicFromBundle(const std::string& bPath, const std::string& fName, int* dataSize = nullptr) {
             int size = 0;
             unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
-            if (!data) return { 0 };
+            if (!data) return { { 0 }, nullptr };
 
-            return LoadMusicStreamFromMemory(GetFileExtension(fName.c_str()), data, size);
+            Music music = LoadMusicStreamFromMemory(GetFileExtension(fName.c_str()), data, size);
+            if (dataSize) *dataSize = size;
+            return { music, data };
         }
 
-        // Load 3D Models (fallback to file loading if memory functions not available)
         inline Model LoadModelFromBundle(const std::string& bPath, const std::string& fName) {
-            int size = 0;
-            unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
-            if (!data) return { 0 };
-
-            // Try to load from memory first, fallback to file
-            Model model = { 0 };
-            try {
-                // Note: LoadModelFromMemory may not be available in all Raylib versions
-                // For now, we'll load from file instead
-                std::string fullPath = bPath + "/" + fName;
-                model = LoadModel(fullPath.c_str());
-            } catch (...) {
-                // Final fallback
-                model = { 0 };
-            }
-            
-            RL_FREE(data);
-            return model;
-        }
-
-        // Load 3D Meshes (fallback to file loading)
-        inline Mesh LoadMeshFromBundle(const std::string& bPath, const std::string& fName) {
-            int size = 0;
-            unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
-            if (!data) return { 0 };
-
-            // Fallback to file loading
-            std::string fullPath = bPath + "/" + fName;
-            Mesh mesh = { 0 };
-            
-            // Try to load from file
-            Model tempModel = LoadModel(fullPath.c_str());
-            if (tempModel.meshCount > 0) {
-                mesh = tempModel.meshes[0];
-            }
-            
-            RL_FREE(data);
-            return mesh;
-        }
-
-        // Load 3D Materials
-        inline Material LoadMaterialFromBundle(const std::string& bPath, const std::string& fName) {
-            int size = 0;
-            unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
-            if (!data) return LoadMaterialDefault();
-
-            Material mat = LoadMaterialDefault();
-            // Parse custom material file format if needed
-            // For now, return default material
-            
-            RL_FREE(data);
-            return mat;
-        }
-
-        // Load 3D Animations (fallback to file loading)
-        inline ModelAnimation LoadAnimationFromBundle(const std::string& bPath, const std::string& fName, int* animCount) {
-            int size = 0;
-            unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
-            if (!data) {
-                *animCount = 0;
-                return { 0 };
-            }
-
-            // Fallback to file loading
-            std::string fullPath = bPath + "/" + fName;
-            int tempAnimCount = 0;
-            ModelAnimation* anims = LoadModelAnimations(fullPath.c_str(), &tempAnimCount);
-            RL_FREE(data);
-            
-            if (animCount) *animCount = tempAnimCount;
-            
-            if (tempAnimCount > 0) {
-                return anims[0]; // Return first animation
-            }
+            TraceLog(LOG_WARNING, "SSO_PROVIDER: LoadModelFromBundle - Not Supported Yet");
             return { 0 };
         }
 
-        // Load Raw Video Buffer (.mp4, .mkv)
+        inline Mesh LoadMeshFromBundle(const std::string& bPath, const std::string& fName) {
+            TraceLog(LOG_WARNING, "SSO_PROVIDER: LoadMeshFromBundle - Not Supported Yet");
+            return { 0 };
+        }
+
+        inline Material LoadMaterialFromBundle(const std::string& bPath, const std::string& fName) {
+            TraceLog(LOG_WARNING, "SSO_PROVIDER: LoadMaterialFromBundle - Not Supported Yet");
+            return LoadMaterialDefault();
+        }
+
+        inline ModelAnimation LoadAnimationFromBundle(const std::string& bPath, const std::string& fName, int* animCount) {
+            TraceLog(LOG_WARNING, "SSO_PROVIDER: LoadAnimationFromBundle - Not Supported Yet");
+            *animCount = 0;
+            return { 0 };
+        }
+
         inline unsigned char* LoadVideoDataFromBundle(const std::string& bPath, const std::string& fName, int* size) {
             return LoadRawDataFromBundle(bPath, fName, size);
         }

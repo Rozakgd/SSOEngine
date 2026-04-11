@@ -3,6 +3,8 @@ cmake-build-*/
 *.o
 *.obj
 *.exe
+build/
+*/build/
 
 # IDE files
 .idea/
@@ -11,10 +13,44 @@ cmake-build-*/
 # CMake
 CMakeCache.txt
 CMakeFiles/
+cmake_install.cmake
+Makefile
 
 # Python
 __pycache__/
 *.pyc
+
+# Android Build Artifacts & Temporary Files
+# Native libraries (build outputs)
+*.so
+libSSOEngine.so
+lib/
+lib/arm64-v8a/
+lib/armeabi-v7a/
+lib/x86/
+lib/x86_64/
+
+# APK build artifacts
+*.apk
+*.unsigned.apk
+*.aligned.apk
+android/bin/
+android/gen/
+android/obj/
+android/src/com/ssogames/ssoengine/R.java
+temp_pkg/
+
+# Android signing & security files
+*.keystore
+*.jks
+debug.keystore
+ssoengine.keystore
+android/*.keystore
+
+# Android temporary staging folders
+arm64-v8a/
+jniLibs/
+libs/
 
 # SSOEngine Safety - High Risk Files
 bfd.h
@@ -52,9 +88,8 @@ assets_data.h
 assets.sso
 resource.o
 
-# Risky executables
+# Risky executables (keep Android .so files in ignore)
 *.dll
-*.so
 *.dylib
 
 # Backup folders
@@ -78,12 +113,16 @@ include/assets_data.h
 .DS_Store
 Thumbs.db
 
-# Pengecualian folder lib
 !lib/
 !lib/*.a
 !lib/*.lib
 !lib/*.dll
 
-# TETEP IGNORE folder compiler kalau masih ada
 lib/gcc/
 lib/bfd-plugins/
+
+# Exception: Keep essential Android library dependencies
+!../lib/android/
+!../lib/android/*.a
+!../lib/android/arm64-v8a/
+!../lib/android/arm64-v8a/*.a
