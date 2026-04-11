@@ -24,11 +24,12 @@ __pycache__/
 # Native libraries (build outputs)
 *.so
 libSSOEngine.so
-lib/
+# Ignore build output folders in lib/ root
 lib/arm64-v8a/
 lib/armeabi-v7a/
 lib/x86/
 lib/x86_64/
+# But keep lib/android/ for essential dependencies (see exceptions at bottom)
 
 # APK build artifacts
 *.apk
@@ -113,16 +114,12 @@ include/assets_data.h
 .DS_Store
 Thumbs.db
 
-!lib/
-!lib/*.a
-!lib/*.lib
-!lib/*.dll
+# Exception: Keep essential Android library dependencies
+!lib/android/
+!lib/android/**
+!lib/android/*.a
+!lib/android/**/*.a
 
+# Ignore other lib subdirectories
 lib/gcc/
 lib/bfd-plugins/
-
-# Exception: Keep essential Android library dependencies
-!../lib/android/
-!../lib/android/*.a
-!../lib/android/arm64-v8a/
-!../lib/android/arm64-v8a/*.a

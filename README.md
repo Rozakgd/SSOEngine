@@ -1,8 +1,9 @@
-# SSOEngine
+# SSOEngine 1.5 NEW PLATFROM
 
-**Simple 2D/3D Game Engine Built with Raylib**
+**Cross-Platform 2D/3D Game Engine Built with Raylib**
 
-> ⚠️ **REALISTIC VERSION**: This is a basic game engine wrapper around Raylib with 2D focus and emerging 3D capabilities, not a full commercial engine.
+> **ANDROID SUPPORT**: Now with full Android APK building and deployment capabilities!
+> **CROSS-PLATFORM**: Windows desktop + Android mobile from the same codebase!
 
 ---
 
@@ -41,37 +42,51 @@ SSOEngine is a **simplified C++ game development framework** that:
 - sso_ext.h       // System extensions
 - sso_file.h      // File dialogs
 - sso_text.h      // Advanced text rendering
+- sso_audio.h     // Audio system with music management
 - sso_utils.h     // General utilities (empty)
 ```
 
 ### Build System
 ```batch
 # What build.bat actually does:
+DESKTOP BUILD:
 1. Check/Install Raylib libraries
 2. Compile asset packer (if needed)
 3. Pack assets into .sso format
 4. Compile resources (.rc files)
 5. Build game executable
+
+ANDROID BUILD:
+1. Cross-compile with Android NDK
+2. Package native libraries (lib/arm64-v8a/)
+3. Create APK with proper structure
+4. Sign with production keystore
+5. Verify APK integrity
 ```
 
 ## 🚀 Quick Start (Realistic)
 
 ### Prerequisites
-- **MinGW-w64** - Required for compilation
-- **Windows** - Currently Windows-only
+- **MinGW-w64** - Required for Windows compilation
+- **Android SDK/NDK** - Required for Android builds
+- **Windows** - Development environment
 - **Basic C++ knowledge** - This is not a no-code tool
 
 ### Installation
 ```bash
 # Clone and build
-git clone https://github.com/Rozaq125/SSOEngine
+git clone -b v1.5-android https://github.com/Rozaq125/SSOEngine.git
 cd SSOEngine/01_Core
 build.bat
 
+# Select build option:
+# [1] Windows Build - Creates .exe
+# [2] Android Build - Creates .apk
+
 # This will:
 # 1. Download Raylib automatically
-# 2. Build your game
-# 3. Create .exe in build/ folder
+# 2. Build your game (Windows or Android)
+# 3. Create executable (.exe) or APK (.apk)
 ```
 
 ### Basic Game Structure
@@ -105,6 +120,10 @@ SSOEngine/
 │   ├── tools/        # Engine tools (C++ headers)
 │   ├── scripts/      # Game scripts
 │   ├── assets/       # Game assets
+│   ├── android/      # Android project files
+│   │   ├── AndroidManifest.xml
+│   │   ├── main_android.cpp
+│   │   └── src/     # Java source
 │   ├── build.bat     # Build script
 │   └── main.cpp      # Game entry point
 ├── 02_Docs/          # Documentation
@@ -123,11 +142,13 @@ SSOEngine/
 - **Asset Management** - Custom .sso format with shader loading
 - **Window Management** - Resizable windows
 - **Basic UI** - Simple buttons and text
+- **Android Support** - Full APK building and deployment
+- **Cross-Platform** - Windows + Android from same codebase
 
 ### ❌ NOT Supported (Yet)
 - **Advanced 3D** - Support shaders,news feature!
 - **Networking** - Single player only
-- **Mobile Platforms** - Windows only
+- **iOS Support** - Android only for now
 - **Visual Editor** - Code-based development
 - **Advanced AI** - Basic game logic only
 
@@ -219,11 +240,8 @@ Your support helps us:
 *Have you made a game with SSOEngine? Let us know and we'll feature it here!*
 
 ### Features in Development
-- 🎮 3D rendering improvements
-- 🎬 Enhanced splash screen system
 - 🌐 Networking support
 - 🎨 Particle system
-- 📱 Mobile export options
 - 🎮 Input system enhancements
 
 ---

@@ -3,6 +3,7 @@
 **REAL ACTUAL GUIDE - Based on Actual Tool Files**
 
 > ⚠️ **UPDATED**: This guide now reflects the ACTUAL tools in the repository, not the basic version I initially described.
+> **ANDROID SUPPORT**: Full Android build system with cross-platform compatibility!
 
 ---
 
@@ -26,10 +27,217 @@ All tools are located in: `01_Core/tools/`
 ├── sso_3d.h         # High-Level 3D Rendering API with Shader Support
 ├── sso_ph3d.h       # Advanced 3D Physics Engine with Realistic Collision
 ├── sso_text.h       # Advanced Text Rendering
+├── sso_audio.h      # Audio System with Music Management
 ├── sso_container.h  # Panel & Widget System (NEW)
 ├── sso_utils.h      # (Currently empty)
 └── raygui.h         # Raylib GUI Extension
 ```
+
+---
+
+## 🎵 sso_audio.h - Audio System with Music Management
+
+### What it ACTUALLY Does
+Advanced audio system that wraps Raylib's audio functions with automatic music management, memory handling, and simplified audio operations. Perfect for games with background music and sound effects.
+
+### Include
+```cpp
+#include "tools/sso_audio.h"
+```
+
+### Available Functions
+
+#### **Sound Loading**
+```cpp
+// Load sound from file
+Sound jumpSound = SSO::Audio::LoadSound("assets/jump.wav");
+
+// Load sound from memory (for asset bundles)
+Sound explosion = SSO::Audio::LoadSoundFromMemory("wav", audioData, dataSize);
+
+// Load music stream from file
+Music bgm = SSO::Audio::LoadMusicStream("assets/background.mp3");
+
+// Load music stream from memory (for asset bundles)
+Music bgm = SSO::Audio::LoadMusicStreamFromMemory("mp3", musicData, dataSize);
+```
+
+#### **Music Management System**
+```cpp
+// Register music for automatic updates
+SSO::Audio::RegisterMusic(backgroundMusic, musicBuffer);
+
+// Update all registered music streams (call in game loop)
+SSO::Audio::UpdateAudio();
+
+// Unload specific registered music by index
+SSO::Audio::UnloadRegisteredMusic(0);
+
+// Clear all registered music and free memory
+SSO::Audio::ClearMusicManager();
+```
+
+#### **Audio Playback**
+```cpp
+// Play sounds
+SSO::Audio::PlaySound(jumpSound);
+
+// Play music
+SSO::Audio::PlayMusic(backgroundMusic);
+
+// Control music
+SSO::Audio::StopMusic(backgroundMusic);
+SSO::Audio::PauseMusic(backgroundMusic);
+SSO::Audio::ResumeMusic(backgroundMusic);
+
+// Check if music is playing
+if (SSO::Audio::IsMusicPlaying(backgroundMusic)) {
+    // Music is currently playing
+}
+```
+
+#### **Audio Control**
+```cpp
+// Set volume (0.0 to 1.0)
+SSO::Audio::SetSoundVolume(jumpSound, 0.8f);
+SSO::Audio::SetMusicVolume(backgroundMusic, 0.5f);
+
+// Set pitch (1.0 = normal, 2.0 = octave higher)
+SSO::Audio::SetSoundPitch(jumpSound, 1.2f);
+SSO::Audio::SetMusicPitch(backgroundMusic, 1.0f);
+```
+
+#### **Resource Cleanup**
+```cpp
+// Unload individual resources
+SSO::Audio::UnloadSound(jumpSound);
+SSO::Audio::UnloadMusic(backgroundMusic);
+
+// Note: Registered music is automatically cleaned up with ClearMusicManager()
+```
+
+### Complete Audio Example
+```cpp
+#include "tools/sso_audio.h"
+#include "tools/sso_window.h"
+
+struct AudioGame {
+    Music backgroundMusic;
+    Sound jumpSound;
+    Sound collectSound;
+};
+
+void LoadAudioAssets(AudioGame& game) {
+    // Load background music
+    game.backgroundMusic = SSO::Audio::LoadMusicStream("assets/background.mp3");
+    
+    // Load sound effects
+    game.jumpSound = SSO::Audio::LoadSound("assets/jump.wav");
+    game.collectSound = SSO::Audio::LoadSound("assets/collect.wav");
+    
+    // Register music for automatic updates
+    SSO::Audio::RegisterMusic(game.backgroundMusic);
+    
+    // Set volumes
+    SSO::Audio::SetMusicVolume(game.backgroundMusic, 0.7f);
+    SSO::Audio::SetSoundVolume(game.jumpSound, 0.8f);
+    SSO::Audio::SetSoundVolume(game.collectSound, 0.9f);
+    
+    // Start background music
+    SSO::Audio::PlayMusic(game.backgroundMusic);
+}
+
+int main() {
+    SSO::Window::Init(800, 600, "Audio Demo");
+    
+    AudioGame game;
+    LoadAudioAssets(game);
+    
+    while (!WindowShouldClose()) {
+        // Update audio system (important for music!)
+        SSO::Audio::UpdateAudio();
+        
+        // Handle input
+        if (IsKeyPressed(KEY_SPACE)) {
+            SSO::Audio::PlaySound(game.jumpSound);
+        }
+        
+        if (IsKeyPressed(KEY_C)) {
+            SSO::Audio::PlaySound(game.collectSound);
+        }
+        
+        // Music controls
+        if (IsKeyPressed(KEY_P)) {
+            if (SSO::Audio::IsMusicPlaying(game.backgroundMusic)) {
+                SSO::Audio::PauseMusic(game.backgroundMusic);
+            } else {
+                SSO::Audio::ResumeMusic(game.backgroundMusic);
+            }
+        }
+        
+        // Render
+        SSO::Window::BeginDrawingVirtual();
+        ClearBackground(BLACK);
+        
+        DrawText("SPACE: Jump Sound", 10, 10, 20, WHITE);
+        DrawText("C: Collect Sound", 10, 40, 20, WHITE);
+        DrawText("P: Pause/Resume Music", 10, 70, 20, WHITE);
+        
+        if (SSO::Audio::IsMusicPlaying(game.backgroundMusic)) {
+            DrawText("Music: PLAYING", 10, 100, 20, GREEN);
+        } else {
+            DrawText("Music: PAUSED", 10, 100, 20, RED);
+        }
+        
+        SSO::Window::EndDrawingVirtual();
+    }
+    
+    // Cleanup
+    SSO::Audio::ClearMusicManager(); // Cleans up registered music
+    SSO::Audio::UnloadSound(game.jumpSound);
+    SSO::Audio::UnloadSound(game.collectSound);
+    SSO::Window::Close();
+    
+    return 0;
+}
+```
+
+### Cross-Platform Audio Loading
+```cpp
+void LoadAudioForPlatform() {
+#ifdef PLATFORM_ANDROID
+    // Android: Load from asset bundles
+    unsigned char* musicData;
+    int musicSize;
+    
+    musicData = SSO::Provider::LoadRawDataFromBundle("audio.sso", "background.mp3", &musicSize);
+    if (musicData) {
+        Music bgm = SSO::Audio::LoadMusicStreamFromMemory("mp3", musicData, musicSize);
+        SSO::Audio::RegisterMusic(bgm, musicData); // Buffer will be freed automatically
+        SSO::Audio::PlayMusic(bgm);
+    }
+#else
+    // Windows: Load from filesystem
+    Music bgm = SSO::Audio::LoadMusicStream("assets/background.mp3");
+    SSO::Audio::RegisterMusic(bgm);
+    SSO::Audio::PlayMusic(bgm);
+#endif
+}
+```
+
+### Key Features
+- **Automatic Music Management** - Register music for automatic updates
+- **Memory Safety** - Automatic cleanup of registered music and buffers
+- **Cross-Platform Loading** - Support both file and memory loading
+- **Volume/Pitch Control** - Full audio control for sounds and music
+- **Asset Bundle Integration** - Works with SSO provider system
+
+### Best Practices
+1. **Always call UpdateAudio()** in your game loop for music streaming
+2. **Register music** instead of manually updating streams
+3. **Use memory loading** for Android asset bundles
+4. **Clean up resources** when done to prevent memory leaks
+5. **Set appropriate volumes** before playing audio
 
 ---
 
@@ -1169,7 +1377,434 @@ void RenderPhysics() {
 
 ---
 
-## � sso_3d.h - High-Level 3D Rendering API with Shader Support
+##  Android Build System - Cross-Platform Development
+
+### What it ACTUALLY Does
+Complete Android build system that converts your SSOEngine game into a production-ready APK with proper native library packaging, signing, and deployment.
+
+### Build System Components
+
+#### **1. Automated Build Script**
+```batch
+build.bat
+```
+- **Auto-detects** Android SDK and build-tools
+- **Cross-compiles** for ARM64 architecture
+- **Packages** native libraries correctly
+- **Signs** APK with production keystore
+- **Verifies** APK integrity
+
+#### **2. Android Project Structure**
+```
+01_Core/android/
+|-- AndroidManifest.xml    # App configuration
+|-- main_android.cpp       # Android entry point
+|-- src/                   # Java source
+|   `-- com/ssogames/ssoengine/
+|       |-- MainActivity.java
+|       `-- R.java
+|-- res/                   # Android resources
+|   `-- values/
+|       `-- strings.xml
+`-- libs/                  # Native libraries (auto-generated)
+```
+
+### Quick Start - Build Your Android APK
+
+#### **Prerequisites**
+- Android SDK with build-tools
+- Android NDK (for cross-compilation)
+- Raylib Android library
+
+#### **Build Process**
+```batch
+# Run the build script
+build.bat
+
+# Select option [2] for Android build
+[2] Android Build
+
+# Watch the magic happen:
+# 1. CMake cross-compilation
+# 2. Native library creation
+# 3. APK packaging
+# 4. Signing and verification
+```
+
+#### **Output Files**
+```
+android/bin/SSOEngine.apk    # Final production APK
+build/libSSOEngine.so        # Native library
+```
+
+### Android-Specific Features
+
+#### **Native Activity Integration**
+```xml
+<!-- AndroidManifest.xml -->
+<activity android:name="android.app.NativeActivity"
+          android:hasCode="false"
+          android:extractNativeLibs="true">
+    <meta-data android:name="android.app.lib_name" 
+               android:value="SSOEngine" />
+</activity>
+```
+
+#### **Asset Manager Integration**
+```cpp
+// main_android.cpp
+extern "C" {
+    AAssetManager* GetAndroidAssetManager() {
+        return androidAssetManager;
+    }
+}
+```
+
+#### **Cross-Platform Asset Loading**
+```cpp
+// Automatic platform detection
+#ifdef PLATFORM_ANDROID
+    // Load from Android assets
+    Texture2D tex = SSO::Provider::LoadTextureFromBundle("assets.sso", "player.png");
+#else
+    // Load from PC filesystem
+    Texture2D tex = LoadTexture("assets/player.png");
+#endif
+```
+
+### APK Structure Verification
+
+Your final APK contains:
+```
+APK ROOT:
+|-- AndroidManifest.xml
+|-- classes.dex
+|-- lib/
+|   `-- arm64-v8a/
+|       `-- libSSOEngine.so    # Your game!
+|-- res/
+|   `-- values/
+|       `-- strings.xml
+`-- resources.arsc
+```
+
+### Troubleshooting Common Issues
+
+#### **"Unable to find native library"**
+```xml
+<!-- Ensure these are in AndroidManifest.xml -->
+android:extractNativeLibs="true"
+android:hasCode="false"
+```
+
+#### **Force Close on Startup**
+```cpp
+// Check main_android.cpp has asset manager setup
+AAssetManager* androidAssetManager = nullptr;
+
+// Ensure no duplicate symbols
+// Raylib handles android_main internally
+```
+
+#### **APK Installation Issues**
+```batch
+# Verify APK signature
+build-tools/apksigner verify --verbose android/bin/SSOEngine.apk
+
+# Check APK contents
+build-tools/aapt list android/bin/SSOEngine.apk
+```
+
+### Advanced Configuration
+
+#### **Custom Keystore**
+```batch
+# Build script auto-creates ssoengine.keystore
+# Password: rozak123
+# Alias: ssoengine
+```
+
+#### **Target Android Versions**
+```xml
+<uses-sdk android:minSdkVersion="29"
+          android:targetSdkVersion="33" />
+```
+
+#### **Permissions**
+```xml
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+```
+
+### Deployment Ready
+
+Your APK is production-ready with:
+- **Proper signing** (V2/V3 schemes)
+- **Optimized libraries** (ARM64)
+- **Correct structure** (lib/arm64-v8a/)
+- **Manifest configuration** (NativeActivity)
+- **Asset integration** (Bundle system)
+
+### Example: Cross-Platform Game Loop
+
+```cpp
+#include "tools/sso_window.h"
+#include "tools/sso_camera.h"
+#include "tools/sso_provider.h"
+
+int main() {
+    // Platform-agnostic initialization
+    SSO::Window::Init(1280, 720, "SSOEngine Game");
+    
+    // Load assets (cross-platform)
+    #ifdef PLATFORM_ANDROID
+        Texture2D player = SSO::Provider::LoadTextureFromBundle("game.sso", "player.png");
+    #else
+        Texture2D player = LoadTexture("assets/player.png");
+    #endif
+    
+    SSO::Camera camera({0, 0}, 1280, 720);
+    
+    while (!WindowShouldClose()) {
+        // Game logic works on both platforms!
+        SSO::Window::BeginDrawingVirtual();
+        
+        camera.Begin();
+        DrawTexture(player, 0, 0, WHITE);
+        camera.End();
+        
+        SSO::Window::EndDrawingVirtual();
+    }
+    
+    SSO::Window::Close();
+    return 0;
+}
+```
+
+**Result:** Same codebase, Windows executable AND Android APK! 
+
+### Advanced Android Examples
+
+#### **Complete Cross-Platform Game**
+```cpp
+#include "tools/sso_window.h"
+#include "tools/sso_camera.h"
+#include "tools/sso_provider.h"
+#include "tools/sso_text.h"
+
+struct Game {
+    Texture2D player;
+    Texture2D enemy;
+    Sound jumpSound;
+    SSO::Camera camera;
+};
+
+// Cross-platform asset loading
+bool LoadGameAssets(Game& game) {
+#ifdef PLATFORM_ANDROID
+    // Android: Load from asset bundle
+    game.player = SSO::Provider::LoadTextureFromBundle("game.sso", "player.png");
+    game.enemy = SSO::Provider::LoadTextureFromBundle("game.sso", "enemy.png");
+    game.jumpSound = SSO::Provider::LoadSoundFromBundle("game.sso", "jump.wav");
+#else
+    // Windows: Load from filesystem
+    game.player = LoadTexture("assets/player.png");
+    game.enemy = LoadTexture("assets/enemy.png");
+    game.jumpSound = LoadSound("assets/jump.wav");
+#endif
+    
+    return (game.player.id > 0 && game.enemy.id > 0);
+}
+
+int main() {
+    // Cross-platform initialization
+    SSO::Window::Init(1280, 720, "Cross-Platform Game");
+    
+    Game game;
+    if (!LoadGameAssets(game)) {
+        TraceLog(LOG_ERROR, "Failed to load game assets");
+        return -1;
+    }
+    
+    game.camera = SSO::Camera({0, 0}, 1280, 720);
+    
+    while (!WindowShouldClose()) {
+        // Input handling (works on both platforms)
+        if (IsKeyPressed(KEY_SPACE)) {
+            PlaySound(game.jumpSound);
+        }
+        
+        // Camera follow player (example)
+        Vector2 playerPos = {400, 300};
+        game.camera.Follow(playerPos, GetFrameTime());
+        
+        // Cross-platform rendering
+        SSO::Window::BeginDrawingVirtual();
+        ClearBackground(BLACK);
+        
+        game.camera.Begin();
+        DrawTexture(game.player, 400, 300, WHITE);
+        DrawTexture(game.enemy, 600, 300, WHITE);
+        game.camera.End();
+        
+        // UI overlay
+        SSO::Text::DrawCentered("Cross-Platform SSOEngine Game", 50, 30, WHITE);
+        
+        SSO::Window::EndDrawingVirtual();
+    }
+    
+    // Cleanup
+    UnloadTexture(game.player);
+    UnloadTexture(game.enemy);
+    UnloadSound(game.jumpSound);
+    SSO::Window::Close();
+    
+    return 0;
+}
+```
+
+#### **Android-Specific Features**
+```cpp
+// Android asset manager integration
+#include "tools/sso_provider.h"
+
+void AndroidSpecificFeatures() {
+#ifdef PLATFORM_ANDROID
+    // Get Android asset manager
+    AAssetManager* assetMgr = GetAndroidAssetManager();
+    
+    if (assetMgr) {
+        TraceLog(LOG_INFO, "Android asset manager loaded successfully");
+        
+        // Load Android-specific assets
+        Texture2D androidTex = SSO::Provider::LoadTextureFromBundle("android.sso", "icon.png");
+        
+        // Use Android-specific features
+        // - Touch input handling
+        // - Screen orientation
+        // - Back button handling
+    }
+#else
+    TraceLog(LOG_INFO, "Running on desktop platform");
+#endif
+}
+```
+
+#### **Build Automation Script**
+```batch
+@echo off
+echo ========================================
+echo    SSOEngine Android Builder
+echo ========================================
+
+:: Check prerequisites
+if not exist "%ANDROID_HOME%" (
+    echo [ERROR] ANDROID_HOME not set!
+    echo Please install Android SDK and set ANDROID_HOME
+    pause
+    exit /b 1
+)
+
+if not exist "%ANDROID_NDK_HOME%" (
+    echo [ERROR] ANDROID_NDK_HOME not set!
+    echo Please install Android NDK and set ANDROID_NDK_HOME
+    pause
+    exit /b 1
+)
+
+:: Build options
+echo.
+echo [1] Windows Build
+echo [2] Android Build
+echo [3] Clean Build
+echo.
+set /p choice="Select build option: "
+
+if "%choice%"=="1" goto windows_build
+if "%choice%"=="2" goto android_build
+if "%choice%"=="3" goto clean_build
+
+:android_build
+echo [INFO] Starting Android build...
+call build_android.bat
+goto end
+
+:windows_build
+echo [INFO] Starting Windows build...
+call build_windows.bat
+goto end
+
+:clean_build
+echo [INFO] Cleaning build directories...
+rmdir /s /q build
+rmdir /s /q android\bin
+rmdir /s /q lib
+goto end
+
+:end
+echo.
+echo [SUCCESS] Build completed!
+pause
+```
+
+### Android Deployment Guide
+
+#### **Install APK on Device**
+```bash
+# Install via ADB
+adb install android/bin/SSOEngine.apk
+
+# Install and run
+adb install android/bin/SSOEngine.apk && adb shell am start -n com.ssogames.ssoengine/.MainActivity
+
+# Debug with logcat
+adb logcat | grep SSOEngine
+```
+
+#### **Release Checklist**
+- [ ] **APK Signed** with production keystore
+- [ ] **Native Libraries** in lib/arm64-v8a/
+- [ ] **Manifest** has android:extractNativeLibs="true"
+- [ ] **Assets** bundled in .sso format
+- [ ] **Permissions** minimal and necessary
+- [ ] **Target SDK** compatible with device
+- [ ] **Tested** on actual Android device
+
+#### **Common Android Issues & Solutions**
+
+**Issue: "Unable to find native library"**
+```xml
+<!-- Solution: Add to AndroidManifest.xml -->
+<application android:extractNativeLibs="true">
+    <activity android:hasCode="false">
+        <meta-data android:name="android.app.lib_name" android:value="SSOEngine" />
+    </activity>
+</application>
+```
+
+**Issue: "Force close on startup"**
+```cpp
+// Solution: Check main_android.cpp
+extern "C" {
+    AAssetManager* GetAndroidAssetManager() {
+        return androidAssetManager;  // Must be global
+    }
+}
+```
+
+**Issue: "Assets not loading"**
+```cpp
+// Solution: Use platform-specific loading
+#ifdef PLATFORM_ANDROID
+    Texture2D tex = SSO::Provider::LoadTextureFromBundle("game.sso", "player.png");
+#else
+    Texture2D tex = LoadTexture("assets/player.png");
+#endif
+```
+
+---
+
+##  sso_3d.h - High-Level 3D Rendering API with Shader Support
 
 ### What it ACTUALLY Does
 High-level 3D rendering system that simplifies Raylib's 3D functions with model loading, basic shapes, collision detection, and camera management. Perfect for 3D prototyping and mixed 2D/3D games.
@@ -2120,11 +2755,7 @@ int main() {
 
 ---
 
-## ❌ Removed Tools
-
-### sso_audio.h - Audio System (REMOVED)
-
-**Status:** ❌ **REMOVED** - All audio functionality has been removed from SSOEngine
+**sso_audio.h**
 
 **Reason:** The audio system was removed to simplify the engine and focus on core graphics and gameplay features.
 
@@ -2172,7 +2803,6 @@ UpdateMusicStream(music);
 - **sso_ext.h requires C++17** - Uses filesystem library
 - **sso_provider.h needs manual memory management** - Free raw data when done
 - **Physics engine is 2D only** - No 3D physics support
-- **sso_audio.h has been removed** - Audio functionality is no longer available
 
 ### Best Practices
 1. **Use SSO::Window::BeginDrawingVirtual()** - Not BeginDrawing()

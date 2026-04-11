@@ -25,7 +25,7 @@ namespace SSO {
                 ClearBackground({ 15, 15, 20, 255 });
                 return;
             }
-            if (!IsTextureValid(tex)) {
+            if (tex.id <= 0) {
                 ClearBackground({ 15, 15, 20, 255 });
                 return;
             }
