@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include "sso_window.h"
+#include "sso_provider.h"
 #include <vector>
 #include <string>
 #include <math.h> 
@@ -15,10 +16,34 @@ namespace SSO {
             Color hoverColor;
             Color textColor;
             Color borderColor;
+            float borderThickness;
+            Color pressedColor;
         };
 
-        inline UIStyle DefaultButtonStyle = { { 45, 45, 48, 255 }, { 65, 65, 70, 255 }, WHITE, { 100, 100, 110, 255 } };
-        inline UIStyle PanelStyle = { { 30, 30, 35, 250 }, { 30, 30, 35, 250 }, WHITE, { 70, 70, 80, 255 } };
+        inline UIStyle DefaultButtonStyle = { { 45, 45, 48, 255 }, { 65, 65, 70, 255 }, WHITE, { 100, 100, 110, 255 }, 1.0f, { 35, 35, 38, 255 } };
+        inline UIStyle PanelStyle = { { 30, 30, 35, 250 }, { 30, 30, 35, 250 }, WHITE, { 70, 70, 80, 255 }, 2.0f, { 25, 25, 30, 250 } };
+
+        inline Font JetBrainsFont = {0};
+        inline bool JetBrainsFontLoaded = false;
+
+        inline void LoadJetBrainsFont() {
+            if (!JetBrainsFontLoaded) {
+                try {
+                    JetBrainsFont = SSO::Provider::LoadFontFromBundle("assets.sso", "font/JetBrainsMono-Bold.ttf", 20);
+                    JetBrainsFontLoaded = (JetBrainsFont.texture.id > 0);
+                } catch (...) {
+                    JetBrainsFont = GetFontDefault();
+                    JetBrainsFontLoaded = false;
+                }
+            }
+        }
+
+        inline Font GetDefaultFont() {
+            if (!JetBrainsFontLoaded) {
+                LoadJetBrainsFont();
+            }
+            return JetBrainsFontLoaded ? JetBrainsFont : GetFontDefault();
+        }
 
         inline void DrawBackground(Texture2D tex, Color tint = WHITE) {
             if (tex.id <= 0 || tex.width <= 0 || tex.height <= 0) {
@@ -43,15 +68,24 @@ namespace SSO {
             DrawTextEx(font, text, pos, size, spacing, color);
         }
 
-        inline bool DrawButton(Rectangle rect, const char* text, Font font, UIStyle style = DefaultButtonStyle) {
+        inline bool DrawButton(Rectangle rect, const char* text, Font font, UIStyle style = DefaultButtonStyle, float roundness = 0.2f, int segments = 10) {
             Vector2 mouse = SSO::Window::GetVirtualMouse();
+            Vector2 realMouse = GetMousePosition();
+            Rectangle realRect = {
+                rect.x * (GetScreenWidth() / (float)SSO::Window::virtualWidth),
+                rect.y * (GetScreenHeight() / (float)SSO::Window::virtualHeight),
+                rect.width * (GetScreenWidth() / (float)SSO::Window::virtualWidth),
+                rect.height * (GetScreenHeight() / (float)SSO::Window::virtualHeight)
+            };
+            
             bool hovering = CheckCollisionPointRec(mouse, rect);
-            bool pressed = hovering && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-            bool clicked = hovering && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+            bool realHovering = CheckCollisionPointRec(realMouse, realRect);
+            bool pressed = realHovering && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+            bool clicked = realHovering && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
             
             Color bg;
             if (pressed) {
-                bg = { (unsigned char)(style.baseColor.r - 10), (unsigned char)(style.baseColor.g - 10), (unsigned char)(style.baseColor.b - 10), style.baseColor.a };
+                bg = style.pressedColor;
             } else if (hovering) {
                 bg = style.hoverColor;
             } else {
@@ -59,8 +93,8 @@ namespace SSO {
             }
             Color border = hovering ? SKYBLUE : style.borderColor;
 
-            DrawRectangleRec(rect, bg);
-            DrawRectangleLinesEx(rect, 1, border);
+            DrawRectangleRounded(rect, roundness, segments, bg);
+            DrawRectangleRoundedLines(rect, roundness, segments, style.borderThickness, border);
 
             float fontSize = rect.height * 0.4f;
             Vector2 textSize = MeasureTextEx(font, text, fontSize, 1);
@@ -70,12 +104,12 @@ namespace SSO {
             return clicked;
         }
 
-        inline void DrawPanel(Rectangle rect, const char* title, Font font, UIStyle style = PanelStyle) {
-            DrawRectangleRec(rect, style.baseColor);
-            DrawRectangleLinesEx(rect, 1, style.borderColor);
+        inline void DrawPanel(Rectangle rect, const char* title, Font font, UIStyle style = PanelStyle, float roundness = 0.1f, int segments = 8) {
+            DrawRectangleRounded(rect, roundness, segments, style.baseColor);
+            DrawRectangleRoundedLines(rect, roundness, segments, style.borderThickness, style.borderColor);
             Rectangle header = { rect.x, rect.y, rect.width, 30 };
-            DrawRectangleRec(header, { 100, 30, 45, 255 }); 
-            DrawRectangleLinesEx(header, 1, style.borderColor);
+            DrawRectangleRounded(header, roundness * 0.5f, segments / 2, { 100, 30, 45, 255 }); 
+            DrawRectangleRoundedLines(header, roundness * 0.5f, segments / 2, style.borderThickness * 0.8f, style.borderColor);
             DrawTextEx(font, title, { rect.x + 10, rect.y + 7 }, 16, 1, WHITE);
         }
 
@@ -127,15 +161,16 @@ namespace SSO {
             return false;
         }
 
-        inline void DrawHealthBar(Rectangle rect, float current, float max, Color fill, Color bg) {
+        inline void DrawHealthBar(Rectangle rect, float current, float max, Color fill, Color bg, float roundness = 0.3f, int segments = 12) {
             float perc = (max > 0) ? (current / max) : 0;
             if (perc < 0) perc = 0; if (perc > 1) perc = 1;
 
-            DrawRectangleRec(rect, bg);
+            DrawRectangleRounded(rect, roundness, segments, bg);
             if (perc > 0) {
-                DrawRectangleRec({ rect.x + 1, rect.y + 1, (rect.width - 2) * perc, rect.height - 2 }, fill);
+                Rectangle fillRect = { rect.x + 2, rect.y + 2, (rect.width - 4) * perc, rect.height - 4 };
+                DrawRectangleRounded(fillRect, roundness, segments, fill);
             }
-            DrawRectangleLinesEx(rect, 1, Fade(WHITE, 0.2f));
+            DrawRectangleRoundedLines(rect, roundness, segments, 1.0f, Fade(WHITE, 0.2f));
         }
     }
 }

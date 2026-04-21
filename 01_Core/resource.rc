@@ -9,8 +9,8 @@ BEGIN
   BEGIN
     BLOCK "040904b0"
     BEGIN
-      VALUE "CompanyName", "SSOGames"
-      VALUE "FileDescription", "SSOEngine"
+      VALUE "CompanyName", "SSOFoundation"
+      VALUE "FileDescription", "Test Games"
       VALUE "FileVersion", "1.0"
       VALUE "InternalName", "SSOEngine"
       VALUE "OriginalFilename", "SSOEngine.exe"

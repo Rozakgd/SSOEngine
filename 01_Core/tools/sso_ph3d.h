@@ -377,7 +377,7 @@ namespace SSO {
             world.gravity = (Vector3){0, y, 0};
         }
         
-        inline RigidBody* CreateBody(Vector3 position, Vector3 size, float mass = 1.0f) {
+        inline RigidBody* CreateBody(Vector3 position, Vector3 size, Color color, float mass = 1.0f) {
             world.bodies.emplace_back();
             RigidBody* body = &world.bodies.back();
             
@@ -388,8 +388,8 @@ namespace SSO {
             return body;
         }
         
-        inline RigidBody* CreateStaticBody(Vector3 position, Vector3 size) {
-            RigidBody* body = CreateBody(position, size, 0.0f);
+        inline RigidBody* CreateStaticBody(Vector3 position, Vector3 size, Color color) {
+            RigidBody* body = CreateBody(position, size, color, 0.0f);
             body->isStatic = true;
             return body;
         }
@@ -487,10 +487,10 @@ namespace SSO {
             }
             
             // Draw the box
-            SSO::ThreeD::SSO_DrawCube(drawPos, body->size.x, body->color);
+            DrawCube(drawPos, body->size.x, body->size.x, body->size.x, body->color);
             
             // Draw wireframe for better visibility
-            SSO::ThreeD::SSO_DrawCubeWires(drawPos, body->size.x, BLACK);
+            DrawCubeWires(drawPos, body->size.x, body->size.x, body->size.x, BLACK);
         }
         
         inline void DrawAllBodies() {

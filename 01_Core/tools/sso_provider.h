@@ -17,6 +17,7 @@ extern AAssetManager* androidAssetManager;
 #include <vector>
 #include <string>
 #include <cstring>
+#include "nlohmann/json.hpp"
 
 namespace SSO {
     namespace Provider {
@@ -122,6 +123,24 @@ namespace SSO {
 #endif
         }
 
+        inline nlohmann::json LoadJSONFromBundle(const std::string& bPath, const std::string& fName) {
+            int size = 0;
+            unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
+            if (!data) return nullptr;
+
+            std::string jsonStr(reinterpret_cast<char*>(data), size);
+            nlohmann::json jsonData = nlohmann::json::parse(jsonStr, nullptr, false);
+            RL_FREE(data);
+            
+            if (jsonData.is_discarded()) {
+                TraceLog(LOG_ERROR, "SSO_PROVIDER: Failed to parse JSON from %s", fName.c_str());
+                return nullptr;
+            }
+            
+            TraceLog(LOG_INFO, "SSO_PROVIDER: Successfully loaded JSON from %s", fName.c_str());
+            return jsonData;
+        }
+
         
         inline Texture2D LoadTextureFromBundle(const std::string& bPath, const std::string& fName) {
             int size = 0;
@@ -166,8 +185,35 @@ namespace SSO {
         }
 
         inline Model LoadModelFromBundle(const std::string& bPath, const std::string& fName) {
-            TraceLog(LOG_WARNING, "SSO_PROVIDER: LoadModelFromBundle - Not Supported Yet");
-            return { 0 };
+            int size = 0;
+            unsigned char* data = LoadRawDataFromBundle(bPath, fName, &size);
+            if (!data) return { 0 };
+
+            const char* tempFileName = "temp_model.obj";
+            const char* tempMtlFileName = "materials.mtl";
+            
+            SaveFileData(tempFileName, data, size);
+            
+            FILE* mtlFile = fopen(tempMtlFileName, "w");
+            if (mtlFile) {
+                fprintf(mtlFile, "# Dummy MTL file to prevent TINYOBJ errors\n");
+                fprintf(mtlFile, "newmtl default\n");
+                fprintf(mtlFile, "Ka 1.0 1.0 1.0\n");
+                fprintf(mtlFile, "Kd 1.0 1.0 1.0\n");
+                fprintf(mtlFile, "Ks 0.0 0.0 0.0\n");
+                fprintf(mtlFile, "Ns 0\n");
+                fprintf(mtlFile, "illum 2\n");
+                fclose(mtlFile);
+            }
+            
+            Model model = LoadModel(tempFileName);
+            
+            std::remove(tempFileName);
+            std::remove(tempMtlFileName);
+            RL_FREE(data);
+            
+            TraceLog(LOG_INFO, "SSO_PROVIDER: Successfully loaded Model from %s", fName.c_str());
+            return model;
         }
 
         inline Mesh LoadMeshFromBundle(const std::string& bPath, const std::string& fName) {

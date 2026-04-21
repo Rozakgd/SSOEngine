@@ -12,7 +12,7 @@
 ### 🎖️ Community Hall of Fame
 Huge respect to the Reddit community for keeping me on my toes! This GitHub release wouldn't be here without the push from:
 
-`u/rileygrham`, `u/Jimmy-M-420`, `u/gabriel_aplok`, `u/InitialComfortable70`, `u/ghulmar`
+`u/rileygrham`, `u/Jimmy-M-420`, `u/gabriel_aplok`, `u/InitialComfortable70`, `u/ghulmar`,`Nathan`
 
 Your skepticism and feedback helped make **SSOEngine** more transparent and open for everyone.
 

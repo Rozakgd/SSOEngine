@@ -8,6 +8,8 @@ add_definitions(-DPLATFORM_DESKTOP)
 
 file(GLOB_RECURSE ALL_SOURCES "*.cpp")
 list(FILTER ALL_SOURCES EXCLUDE REGEX "build/")
+list(FILTER ALL_SOURCES EXCLUDE REGEX "sso_file_win32.cpp")
+list(FILTER ALL_SOURCES EXCLUDE REGEX "sso_file_android.cpp")
 
 set(CORE_SOURCES "")
 
@@ -17,6 +19,9 @@ if(ANDROID)
             list(APPEND CORE_SOURCES ${src})
         endif()
     endforeach()
+    
+    # Add Android-specific file implementations
+    list(APPEND CORE_SOURCES "tools/sso_file_android.cpp")
     
     # Find the glue source in NDK
     set(ANDROID_GLUE_PATH "${CMAKE_ANDROID_NDK}/sources/android/native_app_glue")
@@ -31,8 +36,10 @@ if(ANDROID)
         "../include"
         "include" 
         "tools" 
+        "game"
         "."
         ${ANDROID_GLUE_PATH}
+        "../assets"
     )
     
     # Path to your Android Raylib library
@@ -55,6 +62,9 @@ else()
         endif()
     endforeach()
     
+    # Add Windows-specific file implementations
+    list(APPEND CORE_SOURCES "tools/sso_file_win32.cpp")
+    
     if(WIN32)
         set(WINDOWS_SOURCES ${CORE_SOURCES} resource.rc)
     else()
@@ -67,7 +77,9 @@ else()
         "../include"
         "include" 
         "tools" 
+        "game"
         "."
+        "assets"
     )
     
     target_link_directories(SSOEngine PRIVATE ../lib)

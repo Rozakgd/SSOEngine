@@ -1,9 +1,9 @@
 # How to Use SSOEngine Tools
 
-**REAL ACTUAL GUIDE - Based on Actual Tool Files**
+**PROFESSIONAL BUILD SYSTEM GUIDE - v1.6**
 
-> ⚠️ **UPDATED**: This guide now reflects the ACTUAL tools in the repository, not the basic version I initially described.
-> **ANDROID SUPPORT**: Full Android build system with cross-platform compatibility!
+> ⚠️ **UPDATED**: Complete guide for professional-grade build system with distribution automation
+> **PRODUCTION READY**: Standalone executables with zero dependencies
 
 ---
 
@@ -26,12 +26,71 @@ All tools are located in: `01_Core/tools/`
 ├── sso_splash.h     # Professional Splash Screen System
 ├── sso_3d.h         # High-Level 3D Rendering API with Shader Support
 ├── sso_ph3d.h       # Advanced 3D Physics Engine with Realistic Collision
-├── sso_text.h       # Advanced Text Rendering
+├── sso_text.h       # Advanced Text Rendering with Hyperlinks
 ├── sso_audio.h      # Audio System with Music Management
-├── sso_container.h  # Panel & Widget System (NEW)
+├── sso_container.h  # Panel & Widget System
 ├── sso_utils.h      # (Currently empty)
 └── raygui.h         # Raylib GUI Extension
 ```
+
+---
+
+## 🚀 Professional Build System (v1.6)
+
+### Build Script Usage
+```batch
+# Navigate to project root
+cd SSOEngine/01_Core
+
+# Run professional build system
+build.bat
+```
+
+### Build Options
+1. **Windows Build** - Creates standalone EXE with static linking
+2. **Android Build** - Creates signed APK with V2 signature
+3. **Clean Build** - Comprehensive cleanup of build/ and dist/ folders
+4. **Set Android NDK Path** - Configure Android development environment
+
+### Production Features
+- **Folder Separation**: build/ for compilation, dist/ for distribution
+- **Auto-Zip Archives**: PowerShell Compress-Archive for one-click distribution
+- **Standalone EXE**: Zero dependency executables with static linking
+- **Build Garbage Cleanup**: Automatic cleanup of resource files
+- **Post-Build Navigation**: 6-option professional menu system
+- **Error Handling**: Red color display with clipboard copy feature
+
+### Build Output Structure
+```
+SSOEngine/01_Core/
+├── build/           # Compilation cache and temporary files
+│   ├── CMakeCache.txt
+│   ├── CMakeFiles/
+│   ├── *.o
+│   └── *.obj
+├── dist/            # Final distribution package
+│   ├── Game.exe
+│   ├── assets.sso
+│   └── Game_Release.zip
+└── build.bat         # Professional build script
+```
+
+### Post-Build Menu Options
+After successful build, you can:
+1. **Run Game** - Launch development build from build/
+2. **Open Build Folder** - Access compilation cache for debugging
+3. **Open Dist Folder** - Access final distribution package
+4. **Run Game from Dist** - Test production standalone build
+5. **Return to Main Menu** - Build different configuration without restart
+6. **Close** - Exit build system
+
+### Error Recovery System
+- **Red Color Display**: Clear error visibility with color 0C
+- **Copy to Clipboard**: Automatic error logging with `type error.log | clip`
+- **Error Details**: Timestamp, error code, and context
+- **Recovery Options**: Return to menu or close without data loss
+
+---
 
 ---
 
@@ -2797,12 +2856,177 @@ UpdateMusicStream(music);
 - ✅ **Advanced text** - Typewriter effects, gradients, and wrapping
 - ✅ **Container system** - Auto-stacking widgets with themes (NEW)
 
+## 3D Physics Engine (sso_ph3d.h) - Advanced 3D Physics
+
+### What it ACTUALLY Does
+Complete 3D physics engine with rigid body simulation, collision detection, and realistic physics responses. Perfect for 3D games, physics simulations, and complex object interactions.
+
+### Include
+```cpp
+#include "tools/sso_ph3d.h"
+```
+
+### Core Physics System
+```cpp
+// Initialize physics world
+SSO::Physics3D::Init();
+
+// Create static floor
+auto floor = SSO::Physics3D::CreateStaticBody({0, -1, 0}, {50, 1, 50}, GRAY);
+
+// Create dynamic box
+auto box = SSO::Physics3D::CreateBody({0, 5, 0}, {1, 1, 1}, RED, 1.0f);
+
+// Physics simulation (call in game loop)
+SSO::Physics3D::Step(deltaTime);
+
+// Render all physics objects
+SSO::Physics3D::DrawAllBodies();
+
+// Cleanup
+SSO::Physics3D::Cleanup();
+```
+
+### Physics Features
+- **RigidBody System** - Mass, velocity, acceleration, angular velocity
+- **Collision Detection** - AABB collision with proper response
+- **Gravity System** - Realistic gravity with ground detection
+- **Impulse Forces** - Shooting, explosions, force application
+- **Tumbling Effects** - Natural rotation and angular velocity
+- **Fixed Timestep** - Stable physics simulation at 60 FPS
+
+### Force Application
+```cpp
+// Apply force to body
+SSO::Physics3D::ApplyForce(body, {0, 10, 0});
+
+// Apply impulse (instant velocity change)
+SSO::Physics3D::ApplyImpulse(body, {5, 0, 0});
+
+// Shooting with raycast
+SSO::Physics3D::ShootBullet(cameraPos, direction, 100.0f);
+
+// Explosion effect
+SSO::Physics3D::Explode({0, 0, 0}, 100.0f, 10.0f);
+```
+
+---
+
+## Hyperlink Text System (sso_text.h) - Interactive Text
+
+### What it ACTUALLY Does
+Advanced text rendering system with typewriter effects, gradients, outlines, and interactive hyperlinks that can open URLs when clicked.
+
+### Include
+```cpp
+#include "tools/sso_text.h"
+```
+
+### Hyperlink Function
+```cpp
+// Draw interactive hyperlink
+bool clicked = SSO::Text::DrawHyperlink("Visit GitHub", 100, 100, 20, BLUE, "https://github.com/Rozaq125/SSOEngine");
+
+// Features:
+// - Mouse hover detection with color brightening
+// - Cursor change to pointing hand
+// - Click to open URL in browser
+// - Cross-platform support (Windows/Linux)
+```
+
+### Text Effects
+```cpp
+// Shadow text
+SSO::Text::DrawShadow("Game Title", 100, 100, 30, WHITE, 2);
+
+// Gradient text
+SSO::Text::DrawGradient("Awesome", 100, 150, 30, RED, BLUE);
+
+// Outline text
+SSO::Text::DrawOutline("BORDER", 100, 200, 30, WHITE, BLACK);
+
+// Typewriter effect
+SSO::Text::DrawTypewriter("Loading...", 100, 250, 20, 10.0f, time, WHITE);
+
+// Centered text
+SSO::Text::DrawCentered("CENTERED", 300, 30, WHITE);
+
+// Code block
+SSO::Text::DrawCodeBlock("printf(\"Hello\");", 100, 350, 16, WHITE, {40, 40, 40, 255});
+```
+
+---
+
+## Extended Tools (sso_ext.h) - System Operations
+
+### What it ACTUALLY Does
+System extension tools for file operations, downloads, environment variables, and cross-platform system integration.
+
+### Include
+```cpp
+#include "tools/sso_ext.h"
+```
+
+### File Operations
+```cpp
+// Download files (curl/wget/powershell)
+SSO_Download("https://example.com/file.zip", "downloads/file.zip");
+
+// Copy files and folders
+SSO_Copy("source.txt", "backup.txt");
+SSO_Copy("project/", "backup/");
+
+// Move files
+SSO_Move("old.txt", "new.txt");
+
+// Remove files and folders
+SSO_Remove("temp_folder");
+
+// Create folders
+SSO_MakeFolder("data/levels");
+```
+
+### System Operations
+```cpp
+// Open URLs and files
+SSO_Open("https://github.com/Rozaq125/SSOEngine");
+SSO_Open("document.pdf");
+
+// Execute system commands
+int result = SSO_System("dir");
+
+// Get command output
+std::string output = SSO_GetOutput("git status");
+
+// Check if tool exists
+bool hasGit = SSO_HasTool("git");
+```
+
+### Environment Variables
+```cpp
+// Get environment variable
+std::string path = SSO_GetEnv("PATH");
+
+// Set environment variable
+SSO_SetEnv("MY_VAR", "value");
+```
+
+### File Information
+```cpp
+// Get file size
+long long size = SSO_GetFileSize("game.exe");
+
+// Kill process
+SSO_KillProcess("notepad.exe");
+```
+
+---
+
 ### Limitations
 - **sso_utils.h is empty** - Currently contains no functions
 - **sso_file.h is Windows-only** - Uses Windows API for file dialogs
 - **sso_ext.h requires C++17** - Uses filesystem library
 - **sso_provider.h needs manual memory management** - Free raw data when done
-- **Physics engine is 2D only** - No 3D physics support
 
 ### Best Practices
 1. **Use SSO::Window::BeginDrawingVirtual()** - Not BeginDrawing()

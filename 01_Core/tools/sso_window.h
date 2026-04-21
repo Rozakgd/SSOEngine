@@ -16,7 +16,7 @@ namespace SSO {
         static inline float borderThickness = 4.0f;
         static inline Texture2D customIcon = { 0 };
 
-        static void Init(int width, int height, const char* title) {
+        static inline void Init(int width, int height, const char* title) {
             virtualWidth = width;
             virtualHeight = height;
 
@@ -30,39 +30,39 @@ namespace SSO {
 #endif
 
             target = LoadRenderTexture(virtualWidth, virtualHeight);
-            SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
+            SetTextureFilter(target.texture, TEXTURE_FILTER_POINT);
             SetTargetFPS(60);
         }
 
-        static void SetResolution(int width, int height) {
+        static inline void SetResolution(int width, int height) {
             virtualWidth = width;
             virtualHeight = height;
             if (target.id > 0) UnloadRenderTexture(target);
             target = LoadRenderTexture(virtualWidth, virtualHeight);
-            SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
+            SetTextureFilter(target.texture, TEXTURE_FILTER_POINT);
 #if !defined(PLATFORM_ANDROID)
             SetWindowSize(virtualWidth, virtualHeight);
 #endif
         }
 
-        static void DisableResizing() {
+        static inline void DisableResizing() {
 #if !defined(PLATFORM_ANDROID)
             ClearWindowState(FLAG_WINDOW_RESIZABLE);
 #endif
         }
 
-        static void EnableResizing() {
+        static inline void EnableResizing() {
 #if !defined(PLATFORM_ANDROID)
             SetWindowState(FLAG_WINDOW_RESIZABLE);
 #endif
         }
 
-        static void BeginDrawingVirtual() {
+        static inline void BeginDrawingVirtual() {
             BeginTextureMode(target);
             ClearBackground(BLACK);
         }
 
-        static void EndDrawingVirtual() {
+        static inline void EndDrawingVirtual() {
             if (showBorder) {
                 DrawRectangleLinesEx({ 0, 0, (float)virtualWidth, (float)virtualHeight }, 
                                      borderThickness, borderColor);
@@ -77,32 +77,58 @@ namespace SSO {
 
             float sw = (float)GetScreenWidth();
             float sh = (float)GetScreenHeight();
-            float scale = fminf(sw / (float)virtualWidth, sh / (float)virtualHeight);
+            float aspectRatio = (float)virtualWidth / (float)virtualHeight;
+            float screenAspectRatio = sw / sh;
 
-            Rectangle destRec = {
-                (sw - ((float)virtualWidth * scale)) * 0.5f,
-                (sh - ((float)virtualHeight * scale)) * 0.5f,
-                (float)virtualWidth * scale, 
-                (float)virtualHeight * scale
-            };
+            Rectangle sourceRec = { 0.0f, 0.0f, (float)target.texture.width, (float)-target.texture.height };
+            Rectangle destRec;
 
-            DrawTexturePro(target.texture,
-                { 0.0f, 0.0f, (float)target.texture.width, (float)-target.texture.height },
-                destRec, { 0, 0 }, 0.0f, WHITE);
+            if (screenAspectRatio > aspectRatio) {
+                float scaledWidth = sh * aspectRatio;
+                destRec = {
+                    (sw - scaledWidth) * 0.5f,
+                    0.0f,
+                    scaledWidth,
+                    sh
+                };
+            } else {
+                float scaledHeight = sw / aspectRatio;
+                destRec = {
+                    0.0f,
+                    (sh - scaledHeight) * 0.5f,
+                    sw,
+                    scaledHeight
+                };
+            }
+
+            DrawTexturePro(target.texture, sourceRec, destRec, { 0, 0 }, 0.0f, WHITE);
 
             EndDrawing();
         }
 
-        static Vector2 GetVirtualMouse() {
+        static inline Vector2 GetVirtualMouse() {
             float sw = (float)GetScreenWidth();
             float sh = (float)GetScreenHeight();
-            float scale = fminf(sw / (float)virtualWidth, sh / (float)virtualHeight);
+            float aspectRatio = (float)virtualWidth / (float)virtualHeight;
+            float screenAspectRatio = sw / sh;
 
             Vector2 mouse = GetMousePosition();
             Vector2 vMouse = { 0 };
 
-            vMouse.x = (mouse.x - (sw - ((float)virtualWidth * scale)) * 0.5f) / scale;
-            vMouse.y = (mouse.y - (sh - ((float)virtualHeight * scale)) * 0.5f) / scale;
+            Rectangle destRec;
+            if (screenAspectRatio > aspectRatio) {
+                float scaledWidth = sh * aspectRatio;
+                float offsetX = (sw - scaledWidth) * 0.5f;
+                
+                vMouse.x = (mouse.x - offsetX) / scaledWidth * (float)virtualWidth;
+                vMouse.y = mouse.y / sh * (float)virtualHeight;
+            } else {
+                float scaledHeight = sw / aspectRatio;
+                float offsetY = (sh - scaledHeight) * 0.5f;
+                
+                vMouse.x = mouse.x / sw * (float)virtualWidth;
+                vMouse.y = (mouse.y - offsetY) / scaledHeight * (float)virtualHeight;
+            }
 
             if (vMouse.x < 0.0f) vMouse.x = 0.0f;
             if (vMouse.x > (float)virtualWidth) vMouse.x = (float)virtualWidth;
