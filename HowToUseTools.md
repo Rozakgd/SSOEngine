@@ -1,6 +1,6 @@
 # How to Use SSOEngine Tools
 
-**PROFESSIONAL BUILD SYSTEM GUIDE - v1.6**
+**PROFESSIONAL BUILD SYSTEM GUIDE - v1.7**
 
 > ⚠️ **UPDATED**: Complete guide for professional-grade build system with distribution automation
 > **PRODUCTION READY**: Standalone executables with zero dependencies
@@ -13,29 +13,27 @@ All tools are located in: `01_Core/tools/`
 
 ```
 01_Core/tools/
+├── sso_audio.h      # Audio System with Music Management
 ├── sso_camera.h     # Advanced Camera with smoothing & shake
-├── sso_timer.h      # High-precision Timer with countdown/stopwatch
-├── sso_window.h     # Virtual Resolution Window Manager
-├── sso_ui.h         # Advanced UI System with panels & modals
-├── sso_math.h       # Collision & Math utilities
-├── sso_logger.h     # Colored Console Logger
 ├── sso_ext.h        # System Extension & File Operations
-├── sso_file.h       # Windows File Dialogs
-├── sso_physics.h    # Complete 2D Physics Engine
+├── sso_file.h       # File Dialogs
+├── sso_logger.h     # Colored Console Logger
+├── sso_math.h       # Collision & Math utilities
+├── sso_physics.h    # 2D physics world helper with grounded movement
+├── sso_memo.h       # Persistent Data Storage System
+├── sso_ph3d.h       # Optional advanced physics helper
 ├── sso_provider.h   # Asset Bundle System
 ├── sso_splash.h     # Professional Splash Screen System
-├── sso_3d.h         # High-Level 3D Rendering API with Shader Support
-├── sso_ph3d.h       # Advanced 3D Physics Engine with Realistic Collision
 ├── sso_text.h       # Advanced Text Rendering with Hyperlinks
-├── sso_audio.h      # Audio System with Music Management
-├── sso_container.h  # Panel & Widget System
-├── sso_utils.h      # (Currently empty)
+├── sso_timer.h      # High-precision Timer with countdown/stopwatch
+├── sso_ui.h         # Advanced UI System with panels & modals
+├── sso_window.h     # Virtual Resolution Window Manager
 └── raygui.h         # Raylib GUI Extension
 ```
 
 ---
 
-## 🚀 Professional Build System (v1.6)
+## 🚀 Professional Build System (v1.7)
 
 ### Build Script Usage
 ```batch
@@ -91,6 +89,173 @@ After successful build, you can:
 - **Recovery Options**: Return to menu or close without data loss
 
 ---
+
+## sso_physics.h - 2D Physics Helper
+
+### What it ACTUALLY Does
+Simple 2D physics support for circle-based rigid bodies, grounded movement, and rectangle collision response. `PhysicsWorld` sekarang juga menggunakan broad-phase grid spasial untuk mempercepat deteksi tumbukan antar tubuh.
+
+### Include
+```cpp
+#include "tools/sso_physics.h"
+```
+
+### Basic usage
+```cpp
+using namespace SSO::Physics;
+
+PhysicsWorld world;
+RigidBody player({100, 100}, 16.0f, 1.0f);
+world.AddBody(player);
+Rectangle floor = {0, 400, 800, 50};
+world.AddStaticCollider(floor);
+
+while (!WindowShouldClose()) {
+    float dt = GetFrameTime();
+    world.Update(dt);
+
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+    for (const auto& body : world.GetBodies()) {
+        DrawCircleV(body.position, body.radius, BLUE);
+    }
+    DrawRectangleRec(floor, DARKGRAY);
+    EndDrawing();
+}
+```
+
+---
+
+## sso_memo.h - Persistent Data Storage System
+
+### What it ACTUALLY Does
+Simple key-value storage system for game save data and persistent settings. Uses std::map for efficient memory management and text files for cross-platform persistence.
+
+### Include
+```cpp
+#include "tools/sso_memo.h"
+```
+
+### Available Functions
+
+#### **Data Storage**
+```cpp
+// Store data with key-value pairs
+saveData.write("player_score", "1500");
+saveData.write("player_level", "5");
+saveData.write("player_name", "Hero");
+```
+
+#### **Data Retrieval**
+```cpp
+// Read data by key
+std::string score = saveData.read("player_score");
+std::string level = saveData.read("player_level");
+
+// Check if key exists
+if (saveData.hasKey("player_health")) {
+    std::string health = saveData.read("player_health");
+}
+
+// Get number of stored items
+int itemCount = saveData.size();
+```
+
+#### **File Operations**
+```cpp
+// Save all data to file
+saveData.save("save.txt");
+
+// Load data from file
+saveData.load("save.txt");
+
+// Clear all data from memory
+saveData.clear();
+```
+
+### File Format
+The save system uses simple key=value format:
+```
+player_score=1500
+player_level=5
+player_name=Hero
+```
+
+### Complete Save System Example
+```cpp
+#include "tools/sso_memo.h"
+#include "tools/sso_window.h"
+
+struct GameData {
+    int score = 0;
+    int level = 1;
+    std::string name = "Player";
+    SSO::Memo saveData;
+};
+
+void SaveGame(GameData& game) {
+    game.saveData.write("player_score", std::to_string(game.score));
+    game.saveData.write("player_level", std::to_string(game.level));
+    game.saveData.write("player_name", game.name);
+    game.saveData.save("save.txt");
+}
+
+void LoadGame(GameData& game) {
+    game.saveData.load("save.txt");
+    
+    if (game.saveData.hasKey("player_score")) {
+        game.score = std::stoi(game.saveData.read("player_score"));
+    }
+    if (game.saveData.hasKey("player_level")) {
+        game.level = std::stoi(game.saveData.read("player_level"));
+    }
+    if (game.saveData.hasKey("player_name")) {
+        game.name = game.saveData.read("player_name");
+    }
+}
+
+int main() {
+    SSO::Window::Init(800, 600, "Save System Demo");
+    
+    GameData game;
+    LoadGame(game);
+    
+    while (!WindowShouldClose()) {
+        SSO::Window::BeginDrawingVirtual();
+        ClearBackground(BLACK);
+        
+        DrawText(TextFormat("Score: %d", game.score), 10, 10, 20, WHITE);
+        DrawText(TextFormat("Level: %d", game.level), 10, 40, 20, WHITE);
+        DrawText(TextFormat("Name: %s", game.name.c_str()), 10, 70, 20, WHITE);
+        
+        DrawText("S: Save Game", 10, 120, 20, YELLOW);
+        DrawText("L: Load Game", 10, 150, 20, YELLOW);
+        DrawText("UP: Increase Score", 10, 180, 20, GREEN);
+        
+        if (IsKeyPressed(KEY_S)) {
+            SaveGame(game);
+        }
+        if (IsKeyPressed(KEY_L)) {
+            LoadGame(game);
+        }
+        if (IsKeyPressed(KEY_UP)) {
+            game.score += 100;
+        }
+        
+        SSO::Window::EndDrawingVirtual();
+    }
+    
+    SSO::Window::Close();
+    return 0;
+}
+```
+
+### Best Practices
+1. **Use string conversion** for numeric data with `std::to_string()` and `std::stoi()`
+2. **Check key existence** before reading to avoid empty strings
+3. **Save frequently** to prevent data loss
+4. **Use descriptive keys** for easy debugging
+5. **Clear data** when starting new game sessions
 
 ---
 
@@ -1279,10 +1444,10 @@ bool LoadAssets(GameAssets& assets) {
 
 ---
 
-## � sso_ph3d.h - Advanced 3D Physics Engine
+## � sso_ph3d.h - Optional Physics Helper
 
 ### What it ACTUALLY Does
-Professional 3D physics engine with realistic rigid body dynamics, collision detection, gravity simulation, and angular velocity. Perfect for creating realistic 3D physics simulations and games.
+Optional physics helper for advanced rigid body dynamics, collision detection, gravity simulation, and angular velocity. This header is included for experimental cases and is not required by the core 2D engine.
 
 ### Include
 ```cpp
@@ -1386,7 +1551,6 @@ Vector3 maxBounds = SSO::Physics3D::GetBoundingBoxMax(body);
 ### Example Usage
 ```cpp
 #include "tools/sso_ph3d.h"
-#include "tools/sso_3d.h"
 #include "tools/sso_window.h"
 
 void InitPhysicsDemo() {
@@ -1422,9 +1586,6 @@ void UpdatePhysics(float dt) {
 }
 
 void RenderPhysics() {
-    // Draw ground
-    SSO::ThreeD::SSO_DrawPlane({0, 0, 0}, {20, 20}, GRAY);
-    
     // Draw all physics bodies
     SSO::Physics3D::DrawAllBodies();
     
@@ -1863,193 +2024,6 @@ extern "C" {
 
 ---
 
-##  sso_3d.h - High-Level 3D Rendering API with Shader Support
-
-### What it ACTUALLY Does
-High-level 3D rendering system that simplifies Raylib's 3D functions with model loading, basic shapes, collision detection, and camera management. Perfect for 3D prototyping and mixed 2D/3D games.
-
-### Include
-```cpp
-#include "tools/sso_3d.h"
-```
-
-### Available Functions
-
-#### **Shader Management**
-```cpp
-// Load shaders from asset bundle
-Shader bloomShader = SSO::ThreeD::LoadShaderFromBundle("assets.sso", "shaders/bloom_glow.fs");
-Shader crtShader = SSO::ThreeD::LoadShaderFromBundle("assets.sso", "shaders/retro_crt.fs");
-
-// Available shader effects:
-// - basic_light.fs    - Classic 3D lighting with shadows
-// - bloom_glow.fs     - YouTube-ready glow effects  
-// - retro_crt.fs      - TV tube scanlines and distortion
-// - grayscale_sepia.fs - Flashback/death effects
-// - blur_bokeh.fs     - Depth-of-field blur
-```
-
-#### **Shader Application**
-```cpp
-// Apply basic lighting
-SSO::ThreeD::ApplyBasicLight(shader, lightPos, lightColor, viewPos);
-
-// Apply bloom glow with pulsing
-SSO::ThreeD::ApplyBloomGlow(shader, time, resolution, 0.8f, 2.0f);
-
-// Apply retro CRT with scanlines
-SSO::ThreeD::ApplyRetroCRT(shader, time, resolution, 0.1f, 0.15f);
-
-// Apply grayscale for flashback
-SSO::ThreeD::ApplyGrayscaleSepia(shader, time, resolution, 1.0f, 1);
-
-// Apply depth blur for backgrounds
-SSO::ThreeD::ApplyBlurBokeh(shader, time, resolution, 2.0f, 10.0f);
-```
-
-#### **Shader Rendering**
-```cpp
-// Begin shader mode
-BeginShaderMode(currentShader);
-
-// Draw 3D objects with shader effects
-SSO::ThreeD::SSO_DrawModel(model, position, scale, color);
-SSO::ThreeD::SSO_DrawCube(position, size, color);
-
-// End shader mode
-EndShaderMode();
-```
-
-#### **Model Loading & Management**
-```cpp
-// Load 3D models (supports .obj, .gltf, .iqm)
-Model playerModel = SSO::3D::SSO_LoadModel("assets/player.obj");
-Model terrainModel = SSO::3D::SSO_LoadModel("assets/level.gltf");
-
-// Simple model rendering with automatic scaling
-SSO::3D::SSO_DrawModel(playerModel, {x, y, z}, 1.0f, WHITE);
-
-// Clean up model resources
-SSO::3D::SSO_UnloadModel(playerModel);
-
-// Get model bounding box for collision
-BoundingBox bounds = SSO::3D::SSO_GetModelBoundingBox(playerModel);
-```
-
-#### **3D Camera System**
-```cpp
-// Switch between 2D UI and 3D rendering
-Camera3D camera = { 0 };
-camera.position = { 10.0f, 10.0f, 10.0f };
-camera.target = { 0.0f, 0.0f, 0.0f };
-camera.up = { 0.0f, 1.0f, 0.0f };
-camera.fovy = 45.0f;
-camera.projection = CAMERA_PERSPECTIVE;
-
-// Begin 3D mode
-SSO::3D::SSO_BeginMode3D(camera);
-
-// Your 3D rendering code here
-
-// End 3D mode and return to 2D
-SSO::3D::SSO_EndMode3D();
-```
-
-#### **Basic 3D Shapes**
-```cpp
-// Quick prototyping shapes
-SSO::3D::SSO_DrawCube({x, y, z}, size, BLUE);
-SSO::3D::SSO_DrawSphere({x, y, z}, radius, RED);
-SSO::3D::SSO_DrawCylinder({x, y, z}, radiusTop, radiusBottom, height, 16, GREEN);
-
-// Wireframe versions
-SSO::3D::SSO_DrawCubeWires({x, y, z}, size, WHITE);
-SSO::3D::SSO_DrawSphereWires({x, y, z}, radius, WHITE);
-SSO::3D::SSO_DrawCylinderWires({x, y, z}, radiusTop, radiusBottom, height, 16, WHITE);
-```
-
-#### **Helper Functions**
-```cpp
-// Draw grid for reference
-SSO::3D::SSO_DrawGrid(20, 1.0f);
-
-// Draw 3D gizmo at position
-SSO::3D::SSO_DrawGizmo({0, 0, 0});
-
-// Draw billboard (always faces camera)
-SSO::3D::SSO_DrawBillboard(camera, texture, {x, y, z}, 2.0f, WHITE);
-
-// Draw plane
-SSO::3D::SSO_DrawPlane({0, 0, 0}, {10, 10}, GRAY);
-
-// Draw ray for debugging
-SSO::3D::SSO_DrawRay(startPos, direction, YELLOW);
-```
-
-#### **3D Collision Detection**
-```cpp
-// Box-Sphere collision
-bool hit = SSO::3D::SSO_CheckCollisionBoxSphere(boxBounds, sphereCenter, sphereRadius);
-
-// Sphere-Sphere collision
-bool hit = SSO::3D::SSO_CheckCollisionSpheres(center1, radius1, center2, radius2);
-
-// Box-Box collision
-bool hit = SSO::3D::SSO_CheckCollisionBoxes(box1, box2);
-```
-
-### Example Usage
-```cpp
-#include "tools/sso_3d.h"
-#include "tools/sso_window.h"
-
-int main() {
-    SSO::Window::Init(1280, 720, "3D Demo");
-    
-    // Setup 3D camera
-    Camera3D camera = { 0 };
-    camera.position = { 10.0f, 10.0f, 10.0f };
-    camera.target = { 0.0f, 0.0f, 0.0f };
-    camera.up = { 0.0f, 1.0f, 0.0f };
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-    
-    // Load 3D model
-    Model model = SSO::3D::SSO_LoadModel("assets/cube.obj");
-    
-    while (!WindowShouldClose()) {
-        SSO::Window::BeginDrawingVirtual();
-        ClearBackground(BLACK);
-        
-        // Begin 3D rendering
-        SSO::3D::SSO_BeginMode3D(camera);
-        
-        // Draw grid
-        SSO::3D::SSO_DrawGrid(20, 1.0f);
-        
-        // Draw model
-        SSO::3D::SSO_DrawModel(model, {0, 0, 0}, 1.0f, WHITE);
-        
-        // Draw some shapes
-        SSO::3D::SSO_DrawCube({-3, 1, -3}, 2.0f, RED);
-        SSO::3D::SSO_DrawSphere({3, 1, -3}, 1.0f, BLUE);
-        
-        // End 3D mode
-        SSO::3D::SSO_EndMode3D();
-        
-        // Draw 2D UI on top
-        DrawText("3D Demo", 10, 10, 20, WHITE);
-        
-        SSO::Window::EndDrawingVirtual();
-    }
-    
-    SSO::3D::SSO_UnloadModel(model);
-    SSO::Window::Close();
-    return 0;
-}
-
----
-
 ## 🎬 sso_splash.h - Professional Splash Screen System
 
 ### What it ACTUALLY Does
@@ -2391,161 +2365,6 @@ int main() {
 
 ---
 
-## 🎮 sso_3d.h - High-Level 3D Rendering
-
-### What it ACTUALLY Does
-Simplified 3D rendering system with high-level API, supporting model loading, basic shapes, and easy 2D/3D switching.
-
-### Include
-```cpp
-#include "tools/sso_3d.h"
-```
-
-### Available Functions
-
-#### **Model Loading**
-```cpp
-// Load 3D models (supports .obj, .gltf, .iqm)
-Model playerModel = SSO::3D::SSO_LoadModel("assets/player.obj");
-Model terrainModel = SSO::3D::SSO_LoadModel("assets/level.gltf");
-
-// Clean up
-SSO::3D::SSO_UnloadModel(playerModel);
-```
-
-#### **3D Rendering**
-```cpp
-// Simple model rendering
-SSO::3D::SSO_DrawModel(playerModel, {0, 0, 0}, 1.0f, WHITE);
-
-// Camera system
-Camera3D camera = { 0 };
-camera.position = {10.0f, 10.0f, 10.0f};
-camera.target = {0.0f, 0.0f, 0.0f};
-camera.up = {0.0f, 1.0f, 0.0f};
-camera.fovy = 45.0f;
-camera.projection = CAMERA_PERSPECTIVE;
-
-// 3D Mode switching
-SSO::3D::SSO_BeginMode3D(camera);
-// Draw 3D objects here
-SSO::3D::SSO_EndMode3D();
-
-// Draw 2D UI after 3D
-DrawText("Score: 100", 10, 10, 20, WHITE);
-```
-
-#### **Basic 3D Shapes**
-```cpp
-// Quick prototyping shapes
-SSO::3D::SSO_DrawCube({0, 0, 0}, 2.0f, RED);
-SSO::3D::SSO_DrawSphere({5, 0, 0}, 1.0f, BLUE);
-SSO::3D::SSO_DrawCylinder({-5, 0, 0}, 1.0f, 1.0f, 3.0f, 16, GREEN);
-
-// Wireframe versions
-SSO::3D::SSO_DrawCubeWires({0, 2, 0}, 2.0f, WHITE);
-SSO::3D::SSO_DrawSphereWires({5, 2, 0}, 1.0f, WHITE);
-```
-
-#### **Grid & Gizmos**
-```cpp
-// Draw floor grid
-SSO::3D::SSO_DrawGrid(20, 1.0f);
-
-// Draw transform gizmo
-SSO::3D::SSO_DrawGizmo({0, 0, 0});
-```
-
-#### **Advanced 3D Functions**
-```cpp
-// Billboards (always face camera)
-SSO::3D::SSO_DrawBillboard(camera, texture, {0, 5, 0}, 2.0f, WHITE);
-
-// Draw plane
-SSO::3D::SSO_DrawPlane({0, -1, 0}, {20, 20}, GRAY);
-
-// Draw ray for debugging
-SSO::3D::SSO_DrawRay({0, 0, 0}, {1, 0, 0}, RED);
-```
-
-#### **3D Collision**
-```cpp
-// Get model bounding box
-BoundingBox bbox = SSO::3D::SSO_GetModelBoundingBox(model);
-
-// Collision checks
-bool hit1 = SSO::3D::SSO_CheckCollisionBoxSphere(bbox, {0, 0, 0}, 2.0f);
-bool hit2 = SSO::3D::SSO_CheckCollisionSpheres({0, 0, 0}, 1.0f, {5, 0, 0}, 2.0f);
-bool hit3 = SSO::3D::SSO_CheckCollisionBoxes(bbox1, bbox2);
-```
-
-### Example Usage
-```cpp
-#include "tools/sso_3d.h"
-#include "tools/sso_window.h"
-#include "tools/sso_container.h"
-
-int main() {
-    SSO::Window::Init(1280, 720, "3D Demo");
-    
-    // Load models
-    Model playerModel = SSO::3D::SSO_LoadModel("player.obj");
-    Model enemyModel = SSO::3D::SSO_LoadModel("enemy.gltf");
-    
-    // Setup camera
-    Camera3D camera = { 0 };
-    camera.position = {10.0f, 10.0f, 10.0f};
-    camera.target = {0.0f, 0.0f, 0.0f};
-    camera.up = {0.0f, 1.0f, 0.0f};
-    camera.fovy = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-    
-    Vector3 playerPos = {0, 0, 0};
-    float rotation = 0.0f;
-    
-    while (!WindowShouldClose()) {
-        // Update
-        if (IsKeyDown(KEY_RIGHT)) rotation += 2.0f * GetFrameTime();
-        if (IsKeyDown(KEY_LEFT)) rotation -= 2.0f * GetFrameTime();
-        
-        // 3D Rendering
-        SSO::Window::BeginDrawingVirtual();
-        ClearBackground(BLACK);
-        
-        SSO::3D::SSO_BeginMode3D(camera);
-        
-        // Draw grid
-        SSO::3D::SSO_DrawGrid(20, 1.0f);
-        
-        // Draw 3D objects
-        SSO::3D::SSO_DrawModel(playerModel, playerPos, 1.0f, WHITE);
-        
-        // Draw some basic shapes
-        SSO::3D::SSO_DrawCube({5, 1, 0}, 2.0f, RED);
-        SSO::3D::SSO_DrawSphere({-5, 1, 0}, 1.5f, BLUE);
-        SSO::3D::SSO_DrawCylinder({0, 0, 5}, 1.0f, 1.0f, 3.0f, 16, GREEN);
-        
-        SSO::3D::SSO_EndMode3D();
-        
-        // Draw 2D UI over 3D
-        SSO::Container::SSO_BeginPanel({10, 10, 200, 150});
-        SSO::Container::SSO_PushLabel("3D Controls");
-        SSO::Container::SSO_PushLabel("Arrow Keys: Rotate");
-        SSO::Container::SSO_PushLabel("ESC: Exit");
-        SSO::Container::SSO_RenderPanel();
-        
-        SSO::Window::EndDrawingVirtual();
-    }
-    
-    // Cleanup
-    SSO::3D::SSO_UnloadModel(playerModel);
-    SSO::3D::SSO_UnloadModel(enemyModel);
-    SSO::Window::Close();
-    return 0;
-}
-```
-
----
 
 ### Status
 This file exists but is currently empty (only contains a blank line).
@@ -2851,15 +2670,13 @@ UpdateMusicStream(music);
 - ✅ **File dialogs** - Native Windows open/save dialogs
 - ✅ **Physics engine** - Complete 2D physics with collision detection
 - ✅ **Asset bundles** - Custom .sso format for asset packaging
-- ✅ **3D rendering** - High-level 3D API with model loading, shapes, and collision
 - ✅ **Splash screens** - Professional startup screens with fade effects and progress bar
 - ✅ **Advanced text** - Typewriter effects, gradients, and wrapping
-- ✅ **Container system** - Auto-stacking widgets with themes (NEW)
 
-## 3D Physics Engine (sso_ph3d.h) - Advanced 3D Physics
+## Optional Physics Helper (sso_ph3d.h)
 
 ### What it ACTUALLY Does
-Complete 3D physics engine with rigid body simulation, collision detection, and realistic physics responses. Perfect for 3D games, physics simulations, and complex object interactions.
+Optional physics helper with rigid body simulation, collision detection, and realistic physics responses. This header is included for advanced or experimental cases and is not required by the core 2D engine.
 
 ### Include
 ```cpp

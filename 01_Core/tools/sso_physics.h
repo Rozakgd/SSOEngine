@@ -4,6 +4,8 @@
 #include "../include/raylib.h"
 #include "../include/raymath.h"
 #include <vector>
+#include <unordered_map>
+#include <cstdint>
 #include <cmath>
 
 namespace SSO {
@@ -14,6 +16,7 @@ namespace SSO {
         constexpr float AIR_RESISTANCE = 0.99f;    // velocity dampening
         constexpr float BOUNCE_DAMPING = 0.7f;      // energy loss on bounce
         constexpr float FRICTION = 0.85f;          // ground friction
+        constexpr float GROUND_NORMAL_THRESHOLD = -0.5f; // surface slope threshold for grounded state
         
         // --- PHYSICS OBJECTS ---
         
@@ -165,7 +168,79 @@ namespace SSO {
             
             return info;
         }
-        
+
+        inline uint64_t HashGridCell(int x, int y) {
+            return (((uint64_t)(uint32_t)x) << 32) | (uint32_t)y;
+        }
+
+        inline int GetGridCell(float value, float cellSize) {
+            return (int)floorf(value / cellSize);
+        }
+
+        inline void InsertBodyToGrid(std::unordered_map<uint64_t, std::vector<size_t>>& grid,
+                                     const RigidBody& body, size_t index, float cellSize) {
+            int minCellX = GetGridCell(body.position.x - body.radius, cellSize);
+            int maxCellX = GetGridCell(body.position.x + body.radius, cellSize);
+            int minCellY = GetGridCell(body.position.y - body.radius, cellSize);
+            int maxCellY = GetGridCell(body.position.y + body.radius, cellSize);
+
+            for (int y = minCellY; y <= maxCellY; y++) {
+                for (int x = minCellX; x <= maxCellX; x++) {
+                    grid[HashGridCell(x, y)].push_back(index);
+                }
+            }
+        }
+
+        inline CollisionInfo GetCircleRectCollisionInfo(RigidBody& circle, Rectangle rect) {
+            CollisionInfo info;
+
+            Vector2 closestPoint = {
+                fmaxf(rect.x, fminf(circle.position.x, rect.x + rect.width)),
+                fmaxf(rect.y, fminf(circle.position.y, rect.y + rect.height))
+            };
+
+            Vector2 difference = Vector2Subtract(circle.position, closestPoint);
+            float distance = Vector2Length(difference);
+            float minDistance = circle.radius;
+
+            if (distance < minDistance) {
+                info.hasCollision = true;
+                info.penetration = minDistance - distance;
+                info.normal = (distance > 0) ? Vector2Normalize(difference) : Vector2{0, -1};
+                info.bodyA = &circle;
+                info.bodyB = nullptr;
+            }
+
+            return info;
+        }
+
+        inline void ResolveCircleRectCollision(RigidBody& body, const CollisionInfo& collision) {
+            if (!collision.hasCollision || body.isStatic) return;
+
+            // Push body out of collision along normal
+            body.position = Vector2Add(body.position, Vector2Scale(collision.normal, collision.penetration));
+
+            float velocityAlongNormal = Vector2DotProduct(body.velocity, collision.normal);
+            if (velocityAlongNormal < 0.0f) {
+                Vector2 normalVelocity = Vector2Scale(collision.normal, velocityAlongNormal);
+                Vector2 tangentVelocity = Vector2Subtract(body.velocity, normalVelocity);
+
+                // Reflect or slide along surface depending on collision orientation
+                if (collision.normal.y < GROUND_NORMAL_THRESHOLD) {
+                    // Ground collision: keep horizontal velocity and dampen vertical component
+                    body.velocity = Vector2Scale(tangentVelocity, 1.0f);
+                } else {
+                    // Wall/ceiling collision: remove velocity component into the surface
+                    body.velocity = tangentVelocity;
+                }
+            }
+
+            if (collision.normal.y < GROUND_NORMAL_THRESHOLD) {
+                body.isGrounded = true;
+                body.velocity.x *= FRICTION;
+            }
+        }
+
         // --- COLLISION RESPONSE ---
         
         /**
@@ -254,20 +329,19 @@ namespace SSO {
         inline void MoveWithCollision(RigidBody& body, Vector2 movement, Rectangle obstacle) {
             if (body.isStatic) return;
             
-            // Try horizontal movement
+            // Horizontal movement with sliding
             body.position.x += movement.x;
             if (CheckCircleRectCollision(body, obstacle)) {
-                body.position.x -= movement.x; // Revert
-                body.velocity.x = 0; // Stop horizontal movement
+                body.position.x -= movement.x;
+                body.velocity.x = 0;
             }
             
-            // Try vertical movement
+            // Vertical movement with sliding
             body.position.y += movement.y;
             if (CheckCircleRectCollision(body, obstacle)) {
-                body.position.y -= movement.y; // Revert
-                body.velocity.y = 0; // Stop vertical movement
+                body.position.y -= movement.y;
+                body.velocity.y = 0;
                 
-                // Check if grounded
                 if (movement.y > 0) {
                     body.isGrounded = true;
                 }
@@ -361,33 +435,46 @@ namespace SSO {
             }
             
             void Update(float deltaTime) {
-                // Update all bodies
+                const float gridCellSize = 128.0f;
+                std::unordered_map<uint64_t, std::vector<size_t>> grid;
+                grid.reserve(bodies.size() * 2);
+
+                // Update all bodies and resolve static collisions
                 for (auto& body : bodies) {
+                    body.isGrounded = false;
                     UpdateRigidBody(body, deltaTime);
-                    
-                    // Check collision with static colliders
+
                     for (const auto& collider : staticColliders) {
-                        if (CheckCircleRectCollision(body, collider)) {
-                            // Simple collision response
-                            Vector2 previousPos = Vector2Subtract(body.position, 
-                                Vector2Scale(body.velocity, deltaTime));
-                            body.position = previousPos;
-                            body.velocity = {0, 0};
-                            
-                            // Check if grounded
-                            if (body.velocity.y > 0) {
-                                body.isGrounded = true;
-                            }
+                        CollisionInfo collision = GetCircleRectCollisionInfo(body, collider);
+                        if (collision.hasCollision) {
+                            ResolveCircleRectCollision(body, collision);
                         }
                     }
                 }
-                
-                // Check body-to-body collisions
+
+                // Build spatial hash grid for body-body collision broad phase
                 for (size_t i = 0; i < bodies.size(); i++) {
-                    for (size_t j = i + 1; j < bodies.size(); j++) {
-                        if (CheckCircleCollision(bodies[i], bodies[j])) {
-                            CollisionInfo info = GetCircleCollisionInfo(bodies[i], bodies[j]);
-                            ResolveCollision(info);
+                    InsertBodyToGrid(grid, bodies[i], i, gridCellSize);
+                }
+
+                // Check body-to-body collisions using neighboring cells
+                for (size_t i = 0; i < bodies.size(); i++) {
+                    int cellX = GetGridCell(bodies[i].position.x, gridCellSize);
+                    int cellY = GetGridCell(bodies[i].position.y, gridCellSize);
+
+                    for (int offsetY = -1; offsetY <= 1; offsetY++) {
+                        for (int offsetX = -1; offsetX <= 1; offsetX++) {
+                            uint64_t key = HashGridCell(cellX + offsetX, cellY + offsetY);
+                            auto it = grid.find(key);
+                            if (it == grid.end()) continue;
+
+                            for (size_t j : it->second) {
+                                if (j <= i) continue;
+                                if (CheckCircleCollision(bodies[i], bodies[j])) {
+                                    CollisionInfo info = GetCircleCollisionInfo(bodies[i], bodies[j]);
+                                    ResolveCollision(info);
+                                }
+                            }
                         }
                     }
                 }

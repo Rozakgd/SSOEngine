@@ -867,15 +867,42 @@ if exist "build\assets.sso" (
 echo.
 echo [INFO] Creating production archive...
 
-set "ZIP_NAME=%PROJECT_NAME%_Release.zip"
+set "PROJECT_NAME_CLEAN=SSOEngine"
+set "ZIP_NAME=%PROJECT_NAME_CLEAN%_Release.zip"
 
-powershell -Command "Compress-Archive -Path 'dist\*' -DestinationPath '%ZIP_NAME%' -Force"
+echo [INFO] Compressing dist\* to dist\%ZIP_NAME%...
+
+powershell -Command "try { Compress-Archive -Path 'dist\*' -DestinationPath 'dist\%ZIP_NAME%' -Force; exit 0 } catch { Write-Host 'PowerShell Error:' $_.Exception.Message; exit 1 }"
 
 if %errorlevel% neq 0 (
-    color 0C
-    echo [ERROR] Failed to create production archive
+    color 0E
+    echo [WARNING] Archive creation failed, trying fallback method
     echo Error Code: %errorlevel%
     echo Timestamp: %date% %time%
+    echo.
+    echo [DEBUG] Checking dist folder contents:
+    dir /b dist
+    echo.
+    echo [INFO] Trying alternative compression method...
+    
+    if exist "dist\%PROJECT_NAME_CLEAN%.exe" (
+        if exist "dist\assets.sso" (
+            echo [INFO] Using built-in compression fallback...
+            copy /b "dist\%PROJECT_NAME_CLEAN%.exe" + "dist\assets.sso" "dist\%PROJECT_NAME_CLEAN%_combined.exe" >nul
+            if %errorlevel% equ 0 (
+                echo [SUCCESS] Fallback compression completed
+                set "ZIP_NAME=%PROJECT_NAME_CLEAN%_combined.exe"
+                goto :archive_success
+            ) else (
+                echo [WARNING] Fallback compression failed
+                echo Error Code: %errorlevel%
+            )
+        ) else (
+            echo [WARNING] assets.sso not found in dist folder
+        )
+    ) else (
+        echo [WARNING] %PROJECT_NAME_CLEAN%.exe not found in dist folder
+    )
     
 :zip_error_menu
     echo.
@@ -887,11 +914,32 @@ if %errorlevel% neq 0 (
     set /p zip_error_choice="Choose [1/2/3]: "
     
     if "!zip_error_choice!"=="1" (
-        echo Archive Creation Error > error.log
+        echo SSOEngine Build Error Report > error.log
+        echo ============================== >> error.log
+        echo. >> error.log
+        echo Archive Creation Error >> error.log
         echo Error Code: %errorlevel% >> error.log
         echo Timestamp: %date% %time% >> error.log
+        echo. >> error.log
+        echo PowerShell Error Details: >> error.log
+        echo Exception: "Illegal characters in path." >> error.log
+        echo PROJECT_NAME: "%PROJECT_NAME%" >> error.log
+        echo ZIP_NAME: "%ZIP_NAME%" >> error.log
+        echo. >> error.log
+        echo Debug Information: >> error.log
+        dir /b dist >> error.log
+        echo. >> error.log
+        echo System Information: >> error.log
+        echo OS: Windows >> error.log
+        echo PowerShell Version: >> error.log
+        powershell -Command "$PSVersionTable.PSVersion" >> error.log
+        echo. >> error.log
+        echo Build Configuration: >> error.log
+        echo Build Mode: %BUILD_MODE% >> error.log
+        echo Project Path: %CD% >> error.log
+        echo. >> error.log
         type error.log | clip
-        echo [SUCCESS] Error copied to clipboard!
+        echo [SUCCESS] Complete error report copied to clipboard!
         del error.log
         goto :zip_error_menu
     )
@@ -911,6 +959,7 @@ if %errorlevel% neq 0 (
     goto :zip_error_menu
 )
 
+:archive_success
 echo [SUCCESS] Production archive created: %ZIP_NAME%
 
 echo [INFO] Cleaning up build garbage...
@@ -946,27 +995,15 @@ echo.
 echo [SUCCESS] Build completed successfully!
 echo.
 echo Choose next action:
-echo [1] Run Game
-echo [2] Open Build Folder
-echo [3] Open Dist Folder
-echo [4] Run Game from Dist
-echo [5] Return to Main Menu
-echo [6] Close
+echo [1] Open Build Folder
+echo [2] Open Dist Folder
+echo [3] Run Game from Dist
+echo [4] Return to Main Menu
+echo [5] Close
 echo.
-set /p success_choice="Choose [1/2/3/4/5/6]: "
+set /p success_choice="Choose [1/2/3/4/5]: "
 
 if "!success_choice!"=="1" (
-    if exist "%OUTPUT_EXE%" (
-        start "" "%OUTPUT_EXE%"
-    ) else (
-        echo [ERROR] EXE file not found!
-        pause
-        goto :success_menu
-    )
-    goto :success_menu
-)
-
-if "!success_choice!"=="2" (
     if exist "%BUILD_DIR%" (
         explorer "%BUILD_DIR%"
     ) else (
@@ -977,7 +1014,7 @@ if "!success_choice!"=="2" (
     goto :success_menu
 )
 
-if "!success_choice!"=="3" (
+if "!success_choice!"=="2" (
     if exist "dist" (
         explorer "dist"
     ) else (
@@ -988,9 +1025,9 @@ if "!success_choice!"=="3" (
     goto :success_menu
 )
 
-if "!success_choice!"=="4" (
-    if exist "dist\%PROJECT_NAME%.exe" (
-        start "" "dist\%PROJECT_NAME%.exe"
+if "!success_choice!"=="3" (
+    if exist "dist\%PROJECT_NAME_CLEAN%.exe" (
+        start "" "dist\%PROJECT_NAME_CLEAN%.exe"
     ) else (
         echo [ERROR] Dist EXE file not found!
         pause
@@ -999,15 +1036,15 @@ if "!success_choice!"=="4" (
     goto :success_menu
 )
 
-if "!success_choice!"=="5" (
+if "!success_choice!"=="4" (
     cls
     goto :start_menu
 )
 
-if "!success_choice!"=="6" (
+if "!success_choice!"=="5" (
     exit /b 0
 )
 
-echo [ERROR] Invalid choice. Please select 1, 2, 3, 4, 5, or 6.
+echo [ERROR] Invalid choice. Please select 1, 2, 3, 4, or 5.
 pause
 goto :success_menu
